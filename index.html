@@ -2657,11 +2657,16 @@ async function togglePushNotifications() {
 }
 
 function initServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/pegelclub/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW error:', err));
-  }
+  if (!('serviceWorker' in navigator)) return;
+  // Inline SW as Blob to avoid path issues with GitHub Pages subfolders
+  const swCode = `
+${sw_content}
+`;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl)
+    .then(reg => console.log('SW registered via blob'))
+    .catch(err => console.log('SW error:', err));
 }
 
 initServiceWorker();
