@@ -2627,6 +2627,14 @@ async function sendPush(type, payload) {
   } catch(e) { console.log('Push send skipped:', e.message); }
 }
 
+function initServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/pegelclub/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  }
+}
+
 initServiceWorker();
 init();
 </script>
