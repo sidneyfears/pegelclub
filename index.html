@@ -1103,6 +1103,9 @@ if (!Promise.allSettled) {
           <button class="btn-primary" onclick="testLocalNotification()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#14b8a6,#0d9488)">
             🧪 Lokale Test-Notification
           </button>
+          <button class="btn-primary" onclick="debugPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#6366f1,#4f46e5)">
+            🔍 Push Debuggen
+          </button>
           <button class="btn-danger" onclick="handleLogout()">🚪 Abmelden</button>
         </div>
       </div>
@@ -2488,6 +2491,53 @@ async function sendPush(type, payload) {
       body: JSON.stringify({ type, payload, sender_id: currentUser.id })
     });
   } catch(e) { console.log('Push send skipped:', e.message); }
+}
+
+async function debugPush() {
+  const lines = [];
+  lines.push('SW in navigator: ' + ('serviceWorker' in navigator));
+  lines.push('PushManager in window: ' + ('PushManager' in window));
+  lines.push('Notification permission: ' + Notification.permission);
+  lines.push('Standalone: ' + (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone));
+  
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    lines.push('SW ready: YES');
+    lines.push('SW scope: ' + reg.scope);
+    lines.push('SW script: ' + (reg.active ? reg.active.scriptURL : 'none'));
+    
+    const sub = await reg.pushManager.getSubscription();
+    lines.push('Existing sub: ' + (sub ? 'YES - ' + sub.endpoint.substring(0, 50) : 'NO'));
+    
+    lines.push('VAPID key length: ' + VAPID_PUBLIC_KEY.length);
+    
+    try {
+      const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      lines.push('Key bytes length: ' + keyBytes.length);
+    } catch(e) {
+      lines.push('Key error: ' + e.message);
+    }
+    
+    try {
+      lines.push('Subscribing...');
+      const newSub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+      lines.push('New sub: YES');
+      lines.push('Endpoint: ' + newSub.endpoint.substring(0, 60));
+      lines.push('Keys: ' + (newSub.toJSON().keys ? 'YES' : 'NO'));
+      showToast('✅ Subscription erstellt!');
+    } catch(e) {
+      lines.push('Subscribe error: ' + e.message);
+    }
+  } catch(e) {
+    lines.push('SW error: ' + e.message);
+  }
+  
+  // Show all lines as toasts and in alert
+  console.log(lines.join('\n'));
+  alert(lines.join('\n'));
 }
 
 async function testLocalNotification() {
