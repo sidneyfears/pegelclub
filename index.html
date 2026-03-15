@@ -1097,7 +1097,7 @@ if (!Promise.allSettled) {
             </div>
           </div>
 
-          <button id="pushBtn" class="btn-primary" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#10b981,#059669)" onclick="togglePushNotifications()">🔔 Benachrichtigungen aktivieren</button>
+          <button id="pushBtn" class="btn-primary" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#10b981,#059669)" id="pushBtn" onclick="togglePushNotifications()">🔔 Benachrichtigungen aktivieren</button>
           <button class="btn-primary" onclick="registerPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#d97706)">
             🔔 Benachrichtigungen aktivieren
           </button>
@@ -2625,6 +2625,35 @@ async function sendPush(type, payload) {
       body: JSON.stringify({ type, payload, sender_id: currentUser.id })
     });
   } catch(e) { console.log('Push send skipped:', e.message); }
+}
+
+async function checkPushStatus() {
+  const btn = document.getElementById('pushBtn');
+  if (!btn) return;
+  if (!('Notification' in window)) {
+    btn.textContent = '🔔 Benachrichtigungen nicht unterstützt';
+    btn.disabled = true;
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.textContent = '✅ Benachrichtigungen aktiv';
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+  } else if (Notification.permission === 'denied') {
+    btn.textContent = '🚫 Benachrichtigungen blockiert';
+    btn.disabled = true;
+  } else {
+    btn.textContent = '🔔 Benachrichtigungen aktivieren';
+    btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+  }
+}
+
+async function togglePushNotifications() {
+  if (Notification.permission === 'granted') {
+    showToast('✅ Benachrichtigungen bereits aktiv!');
+    return;
+  }
+  await registerPush();
+  await checkPushStatus();
 }
 
 function initServiceWorker() {
