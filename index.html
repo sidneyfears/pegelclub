@@ -2465,11 +2465,15 @@ async function registerPush() {
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
     console.log('Push subscribed:', sub.endpoint.substring(0, 60));
 
-    // Save to Supabase
+    // Save to Supabase - delete first to avoid unique constraint error
     const { data: { session } } = await sb.auth.getSession();
+    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+    });
     const res = await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'resolution=merge-duplicates' },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
     });
     if (!res.ok) { showToast('Speicherfehler: ' + await res.text()); return; }
