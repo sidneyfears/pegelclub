@@ -2523,7 +2523,6 @@ async function checkPushStatus() {
 }
 
 async function togglePushNotifications() {
-  // Check if running as installed PWA
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   if (!isStandalone) {
     showToast('📱 Bitte App zuerst installieren: Teilen → Zum Home-Bildschirm');
@@ -2533,7 +2532,7 @@ async function togglePushNotifications() {
     showToast('⚠️ Push wird von diesem Browser nicht unterstützt');
     return;
   }
-  if (Notification.permission === 'granted') { showToast('✅ Benachrichtigungen bereits aktiv!'); return; }
+  // Always try to register - even if permission already granted
   await registerPush();
 }
 
