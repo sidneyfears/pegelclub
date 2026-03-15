@@ -1117,10 +1117,17 @@ if (!Promise.allSettled) {
     <div id="chatView">
       <div class="chat-messages" id="chatMessages"></div>
       <div class="chat-bar">
+        <button onclick="toggleEmojiPicker()" style="width:38px;height:38px;border-radius:12px;background:var(--brand-light);border:none;cursor:pointer;font-size:20px;flex-shrink:0">😊</button>
+        <button onclick="document.getElementById('chatPhotoInput').click()" style="width:38px;height:38px;border-radius:12px;background:var(--brand-light);border:none;cursor:pointer;font-size:18px;flex-shrink:0">📷</button>
+        <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendPhoto(event)" />
         <input class="chat-input" id="chatInput" placeholder="Nachricht…" onkeydown="if(event.key==='Enter')sendMessage()" />
         <button class="chat-send" onclick="sendMessage()">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
+      </div>
+      <!-- Emoji Picker -->
+      <div id="emojiPicker" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;max-width:398px;background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:12px;z-index:150;max-height:220px;overflow-y:auto">
+        <div style="display:flex;flex-wrap:wrap;gap:2px" id="emojiGrid"></div>
       </div>
     </div>
 
@@ -1264,18 +1271,18 @@ if (!Promise.allSettled) {
       <label class="form-label">Frage</label>
       <input class="input" id="pollQ" placeholder="z.B. Wohin geht der Trip?" />
     </div>
-    <div class="form-row">
-      <label class="form-label">Option 1</label>
-      <input class="input" id="pollO1" placeholder="z.B. Hamburg 🌊" />
+    <div class="form-label" style="margin-bottom:8px">Optionen</div>
+    <div id="pollOptionsContainer">
+      <div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="input" placeholder="Option 1" style="flex:1" />
+      </div>
+      <div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="input" placeholder="Option 2" style="flex:1" />
+      </div>
     </div>
-    <div class="form-row">
-      <label class="form-label">Option 2</label>
-      <input class="input" id="pollO2" placeholder="z.B. Wien 🎭" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Option 3 (optional)</label>
-      <input class="input" id="pollO3" placeholder="z.B. Prag 🏰" />
-    </div>
+    <button onclick="addPollOption()" style="width:100%;padding:10px;border:2px dashed var(--border);border-radius:12px;background:none;color:var(--brand);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px">
+      + Option hinzufügen
+    </button>
     <button class="btn-primary" onclick="createPoll()" style="margin-top:4px">Abstimmung starten</button>
   </div>
 </div>
@@ -2587,7 +2594,174 @@ async function togglePushNotifications() {
   await registerPush();
 }
 
+// ════════════════════════════════════════════════
+// POLL - Dynamic options
+// ════════════════════════════════════════════════
+function addPollOption() {
+  const container = document.getElementById('pollOptionsContainer');
+  const count = container.querySelectorAll('.poll-option-row').length + 1;
+  const row = document.createElement('div');
+  row.className = 'poll-option-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+  row.innerHTML = '<input class="input" placeholder="Option ' + count + '" style="flex:1" />' +
+    '<button onclick="removePollOption(this)" style="width:38px;height:44px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);font-size:18px;cursor:pointer;flex-shrink:0">×</button>';
+  container.appendChild(row);
+}
+
+function removePollOption(btn) {
+  const container = document.getElementById('pollOptionsContainer');
+  if (container.querySelectorAll('.poll-option-row').length > 2) {
+    btn.parentElement.remove();
+  } else {
+    showToast('Mindestens 2 Optionen nötig');
+  }
+}
+
+// Override createPoll to use dynamic options
+async function createPoll() {
+  if (!checkPermission()) return;
+  const q = document.getElementById('pollQ').value.trim();
+  if (!q) { showToast('Frage eingeben!'); return; }
+  
+  const rows = document.querySelectorAll('#pollOptionsContainer .poll-option-row input');
+  const options = Array.from(rows).map(i => i.value.trim()).filter(v => v.length > 0);
+  
+  if (options.length < 2) { showToast('Mindestens 2 Optionen nötig'); return; }
+  
+  const { data: { session: ps } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + '/rest/v1/polls', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ps.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ question: q, options, created_by: currentUser.id })
+  });
+  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+  closeModal('modalNewPoll');
+  document.getElementById('pollQ').value = '';
+  // Reset options to 2
+  const container = document.getElementById('pollOptionsContainer');
+  container.innerHTML = 
+    '<div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" placeholder="Option 1" style="flex:1" /></div>' +
+    '<div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" placeholder="Option 2" style="flex:1" /></div>';
+  await loadPolls();
+  await sendPush('poll', { sender: currentProfile?.display_name || 'Jemand', question: q });
+  showToast('🗳️ Abstimmung gestartet!');
+}
+
+// ════════════════════════════════════════════════
+// CHAT - Emoji Picker + Photo Upload
+// ════════════════════════════════════════════════
+const EMOJIS = ['😀','😂','🥹','😍','🥰','😎','🤩','😜','🤔','😴','😭','😡','🥳','🎉','🔥','❤️','👍','👎','👏','🙌','🤝','💪','🍺','🍻','🥂','🎯','✅','❌','⚡','💡','🗺️','🏖️','🎭','🏔️','🚗','✈️','🎸','⚽','🏆','💰','💳','🛒','📅','📸','🤙','💯','🆙','🔔','📢','🎊','🥇'];
+
+let emojiPickerOpen = false;
+
+function toggleEmojiPicker() {
+  const picker = document.getElementById('emojiPicker');
+  emojiPickerOpen = !emojiPickerOpen;
+  picker.style.display = emojiPickerOpen ? 'block' : 'none';
+  if (emojiPickerOpen && !document.getElementById('emojiGrid').children.length) {
+    const grid = document.getElementById('emojiGrid');
+    EMOJIS.forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.textContent = emoji;
+      btn.style.cssText = 'font-size:26px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;line-height:1';
+      btn.onclick = () => {
+        const input = document.getElementById('chatInput');
+        input.value += emoji;
+        input.focus();
+        toggleEmojiPicker();
+      };
+      grid.appendChild(btn);
+    });
+  }
+}
+
+// Close emoji picker when clicking outside
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('emojiPicker');
+  const emojiBtn = picker?.previousElementSibling?.previousElementSibling;
+  if (picker && emojiPickerOpen && !picker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPickerOpen = false;
+    picker.style.display = 'none';
+  }
+});
+
+async function sendPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Foto max. 5MB'); return; }
+  
+  try {
+    showToast('📸 Foto wird hochgeladen...');
+    const { data: { session } } = await sb.auth.getSession();
+    const fileName = 'chat/' + currentUser.id + '-' + Date.now() + '.' + file.name.split('.').pop();
+    
+    // Upload to Supabase Storage
+    const formData = new FormData();
+    formData.append('', file);
+    const uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/avatars/' + fileName, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token },
+      body: file
+    });
+    
+    if (!uploadRes.ok) { showToast('Upload fehlgeschlagen'); return; }
+    
+    const photoUrl = SUPABASE_URL + '/storage/v1/object/public/avatars/' + fileName;
+    
+    // Send as message with image tag
+    await fetch(SUPABASE_URL + '/rest/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ user_id: currentUser.id, text: '<img src="' + photoUrl + '" style="max-width:220px;max-height:220px;border-radius:12px;display:block">' })
+    });
+    
+    event.target.value = '';
+    showToast('📸 Foto gesendet!');
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════
+// UPDATE BANNER
+// ════════════════════════════════════════════════
+const APP_VERSION = '1.0.3';
+
+function checkForUpdate() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner();
+        }
+      });
+    });
+    // Also check manually
+    reg.update();
+  });
+}
+
+function showUpdateBanner() {
+  if (document.getElementById('updateBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(91,79,207,0.4)';
+  banner.innerHTML = '<span>🆕 Update verfügbar!</span>' +
+    '<button onclick="applyUpdate()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;font-size:13px;cursor:pointer">Jetzt laden</button>';
+  document.body.prepend(banner);
+}
+
+function applyUpdate() {
+  navigator.serviceWorker.ready.then(reg => {
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    window.location.reload();
+  });
+}
+
 function initServiceWorker() {
+  checkForUpdate();
   if (!('serviceWorker' in navigator)) return;
 
   const swCode = `
