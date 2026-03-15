@@ -1291,6 +1291,7 @@ if (!Promise.allSettled) {
 
 <!-- ==================== SCRIPT ==================== -->
 <script>
+
 // ════════════════════════════════════════════════
 // ⚙️  SUPABASE CONFIG  ← HIER EINTRAGEN
 // ════════════════════════════════════════════════
@@ -2233,32 +2234,6 @@ async function castVote(pollId, optionIndex) {
   showToast('✅ Stimme abgegeben!');
 }
 
-async function createPoll() {
-  if (!checkPermission()) return;
-  const q = document.getElementById('pollQ').value.trim();
-  const o1 = document.getElementById('pollO1').value.trim();
-  const o2 = document.getElementById('pollO2').value.trim();
-  const o3 = document.getElementById('pollO3').value.trim();
-  if (!q || !o1 || !o2) { showToast('Frage und mind. 2 Optionen nötig'); return; }
-  const options = [o1, o2];
-  if (o3) options.push(o3);
-  const { data: { session: ps } } = await sb.auth.getSession();
-  const res = await fetch(SUPABASE_URL + '/rest/v1/polls', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ps.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ question: q, options, created_by: currentUser.id })
-  });
-  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
-  closeModal('modalNewPoll');
-  ['pollQ','pollO1','pollO2','pollO3'].forEach(id => document.getElementById(id).value = '');
-  await loadPolls();
-  await sendPush('poll', { sender: currentProfile?.display_name || 'Jemand', question: q });
-  showToast('🗳️ Abstimmung gestartet!');
-}
-
-// ════════════════════════════════════════════════
-// CHAT
-// ════════════════════════════════════════════════
 async function loadChat() {
   const { data: msgs } = await sb.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
   renderMessages(msgs || []);
@@ -2473,21 +2448,37 @@ function urlBase64ToUint8Array(base64String) {
 async function registerPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) { showToast('Push nicht unterstützt'); return; }
   try {
-    const reg = await navigator.serviceWorker.ready;
+    // iOS CRITICAL: request permission FIRST, directly from user gesture - no async before this!
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { showToast('Benachrichtigungen deaktiviert'); return; }
-    // Convert VAPID key properly for iOS and Android
+
+    // Now wait for SW
+    const reg = await navigator.serviceWorker.ready;
+    console.log('SW ready for push:', reg.active?.scriptURL);
+
+    // Unsubscribe old subscription first to force fresh one
+    const oldSub = await reg.pushManager.getSubscription();
+    if (oldSub) await oldSub.unsubscribe();
+
+    // Create new subscription
     const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
+    console.log('Push subscribed:', sub.endpoint.substring(0, 60));
+
+    // Save to Supabase
     const { data: { session } } = await sb.auth.getSession();
-    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
     });
+    if (!res.ok) { showToast('Speicherfehler: ' + await res.text()); return; }
     showToast('🔔 Benachrichtigungen aktiviert!');
     checkPushStatus();
-  } catch(e) { showToast('Fehler: ' + e.message); }
+  } catch(e) {
+    console.error('registerPush error:', e);
+    showToast('Fehler: ' + e.message);
+  }
 }
 
 async function sendPush(type, payload) {
@@ -2761,71 +2752,26 @@ function applyUpdate() {
 }
 
 function initServiceWorker() {
-  checkForUpdate();
   if (!('serviceWorker' in navigator)) return;
-
-  const swCode = `
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-
-self.addEventListener('push', e => {
-  let title = '🍻 Pegelclub';
-  let body = 'Neue Aktivität!';
-  if (e.data) {
-    try {
-      const d = e.data.json();
-      const p = d.payload || {};
-      const map = {
-        chat:    ['💬 Neue Nachricht',   (p) => (p.sender||'Jemand') + ': ' + (p.text||'')],
-        event:   ['⚡ Neues Event',       (p) => (p.sender||'Jemand') + ' hat "' + (p.name||'') + '" erstellt'],
-        expense: ['💳 Neue Ausgabe',      (p) => (p.sender||'Jemand') + ' hat Ausgabe eingetragen'],
-        poll:    ['🗳️ Abstimmung',        (p) => (p.sender||'Jemand') + ' hat Abstimmung gestartet'],
-        trip:    ['🗺️ Neuer Trip',        (p) => (p.sender||'Jemand') + ' hat Trip erstellt'],
-        payment: ['💸 Zahlung',           (p) => (p.sender||'Jemand') + ' hat Zahlung bestätigt'],
-      };
-      const m = map[d.type];
-      if (m) { title = m[0]; body = m[1](p); }
-    } catch(err) {}
-  }
-  e.waitUntil(self.registration.showNotification(title, {
-    body, icon: '/icon-192.png', badge: '/icon-192.png',
-    tag: 'pegelclub', renotify: true,
-    data: { url: self.location.origin }
-  }));
-});
-
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list => {
-    for (const c of list) { if ('focus' in c) return c.focus(); }
-    return clients.openWindow(self.location.origin);
-  }));
-});
-`;
-
-  // Create blob URL for SW - works regardless of path
-  const blob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(blob);
-
-  // First unregister all old SWs
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    const unregPromises = regs.map(r => r.unregister());
-    return Promise.all(unregPromises);
-  }).then(() => {
-    // Register new inline SW
-    return navigator.serviceWorker.register(swUrl, {scope: '/'});
-  }).then(reg => {
-    console.log('SW registered inline:', reg.scope);
-  }).catch(err => {
-    console.log('SW inline failed, trying /sw.js:', err.message);
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered /sw.js:', reg.scope))
-      .catch(e => console.log('SW unavailable:', e.message));
-  });
+  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    .then(reg => {
+      console.log('SW registered:', reg.scope);
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+    })
+    .catch(err => console.error('SW error:', err));
 }
+
 
 initServiceWorker();
 init();
+
 </script>
 </body>
 </html>
