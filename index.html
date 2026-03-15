@@ -1097,12 +1097,8 @@ if (!Promise.allSettled) {
             </div>
           </div>
 
-          <button id="pushBtn" class="btn-primary" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#10b981,#059669)" id="pushBtn" onclick="togglePushNotifications()">🔔 Benachrichtigungen aktivieren</button>
-          <button class="btn-primary" onclick="registerPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#d97706)">
+          <button id="pushBtn" class="btn-primary" onclick="togglePushNotifications()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#d97706)">
             🔔 Benachrichtigungen aktivieren
-          </button>
-          <button id="pushToggleBtn" onclick="togglePush()" style="width:100%;padding:13px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;border-radius:14px;border:1.5px solid var(--border);background:#fff;color:var(--text);margin-bottom:10px;transition:all 0.2s">
-            🔕 Benachrichtigungen aktivieren
           </button>
           <button class="btn-danger" onclick="handleLogout()">🚪 Abmelden</button>
         </div>
@@ -2447,12 +2443,17 @@ function switchTab(tab, btn) {
 // ════════════════════════════════════════════════
 
 function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const out = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
-  return out;
+  try {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const out = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
+    return out;
+  } catch(e) {
+    console.error('VAPID key conversion error:', e);
+    throw new Error('Ungültiger VAPID Public Key');
+  }
 }
 
 async function registerPush() {
@@ -2461,7 +2462,9 @@ async function registerPush() {
     const reg = await navigator.serviceWorker.ready;
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { showToast('Benachrichtigungen deaktiviert'); return; }
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    // Convert VAPID key properly for iOS and Android
+    const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
     const { data: { session } } = await sb.auth.getSession();
     await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
       method: 'POST',
@@ -2501,6 +2504,16 @@ async function checkPushStatus() {
 }
 
 async function togglePushNotifications() {
+  // Check if running as installed PWA
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (!isStandalone) {
+    showToast('📱 Bitte App zuerst installieren: Teilen → Zum Home-Bildschirm');
+    return;
+  }
+  if (!('PushManager' in window)) {
+    showToast('⚠️ Push wird von diesem Browser nicht unterstützt');
+    return;
+  }
   if (Notification.permission === 'granted') { showToast('✅ Benachrichtigungen bereits aktiv!'); return; }
   await registerPush();
 }
