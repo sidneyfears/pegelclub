@@ -1720,8 +1720,6 @@ async function loadEvents() {
     events: (events || []).filter(e => e.trip_id === t.id)
   })).filter(g => g.events.length > 0);
 
-  const unassigned = (events || []).filter(e => !e.trip_id);
-
   // Render trips
   tripsWithEvents.forEach(({ trip, events: tevs }) => {
     const tripTotal = tevs.reduce((s, ev) => {
@@ -1761,6 +1759,7 @@ async function loadEvents() {
 
     const inner = tripCard.querySelector('#trip-events-inner-' + trip.id);
     tevs.forEach(ev => renderEventCard(ev, allExp, inner, statusCls, statusLabel));
+  });
 
   // Render unassigned events
   const unassigned = (events || []).filter(e => !e.trip_id);
@@ -2446,7 +2445,6 @@ function switchTab(tab, btn) {
 // ════════════════════════════════════════════════
 // PUSH NOTIFICATIONS
 // ════════════════════════════════════════════════
-const VAPID_PUBLIC_KEY = 'BMP2KgHflz9dEvpi0P1ddO0zgJWw6TGc5PcgyT-OeE0y2IT0LzDE8IXuewiPykjFc7TCNJ8GCGGXBxdpxylv2HU';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -2517,3 +2515,6 @@ function initServiceWorker() {
 
 initServiceWorker();
 init();
+</script>
+</body>
+</html>
