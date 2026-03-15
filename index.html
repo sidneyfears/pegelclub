@@ -1292,7 +1292,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // ════════════════════════════════════════════════
 // ⚙️ PUSH CONFIG – VAPID Public Key eintragen
 // ════════════════════════════════════════════════
-const VAPID_PUBLIC_KEY = 'DEIN_VAPID_PUBLIC_KEY'; // ← nach Setup eintragen
+const VAPID_PUBLIC_KEY = 'BMP2KgHflz9dEvpi0P1ddO0zgJWw6TGc5PcgyT-OeE0y2IT0LzDE8IXuewiPykjFc7TCNJ8GCGGXBxdpxylv2HU';
 
 // ════════════════════════════════════════════════
 // STATE
@@ -2582,110 +2582,9 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // ════════════════════════════════════════════════
 
 // ⚠️ VAPID PUBLIC KEY – nach Generierung hier eintragen:
-const VAPID_PUBLIC_KEY = 'DEIN_VAPID_PUBLIC_KEY';
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
-}
-
-async function initServiceWorker() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  try {
-    await navigator.serviceWorker.register('/sw.js');
-  } catch(e) {
-    console.warn('SW registration failed:', e);
-  }
-}
-
-async function togglePushNotifications() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    showToast('❌ Dein Browser unterstützt keine Push-Benachrichtigungen');
-    return;
-  }
-
-  const reg = await navigator.serviceWorker.ready;
-  const existing = await reg.pushManager.getSubscription();
-
-  if (existing) {
-    await existing.unsubscribe();
-    await savePushSubscription(null);
-    updatePushBtn(false);
-    showToast('🔕 Benachrichtigungen deaktiviert');
-    return;
-  }
-
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      showToast('❌ Berechtigung verweigert – bitte in den Einstellungen aktivieren');
-      return;
-    }
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    });
-
-    await savePushSubscription(sub);
-    updatePushBtn(true);
-    showToast('🔔 Benachrichtigungen aktiviert!');
-  } catch(e) {
-    showToast('Fehler: ' + e.message);
-  }
-}
-
-async function savePushSubscription(sub) {
-  const { data: { session } } = await sb.auth.getSession();
-  const subJson = sub ? JSON.stringify(sub) : null;
-  await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  if (subJson) {
-    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ user_id: currentUser.id, subscription: subJson })
-    });
-  }
-}
-
-async function updatePushBtn(active) {
-  const btn = document.getElementById('pushBtn');
-  if (!btn) return;
-  if (active) {
-    btn.textContent = '🔕 Benachrichtigungen deaktivieren';
-    btn.style.background = '#6b7280';
-  } else {
-    btn.textContent = '🔔 Benachrichtigungen aktivieren';
-    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-  }
-}
-
-async function checkPushStatus() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    const btn = document.getElementById('pushBtn');
-    if (btn) { btn.textContent = '❌ Nicht unterstützt'; btn.disabled = true; btn.style.background = '#9ca3af'; }
-    return;
-  }
-  const reg = await navigator.serviceWorker.ready.catch(() => null);
-  if (!reg) return;
-  const sub = await reg.pushManager.getSubscription().catch(() => null);
-  updatePushBtn(!!sub);
-}
-
 // ════════════════════════════════════════════════
-// START
+// PUSH NOTIFICATIONS
 // ════════════════════════════════════════════════
-
-// ⚠️ Nach Schritt 2 der Anleitung: VAPID Public Key hier eintragen
-const VAPID_PUBLIC_KEY = 'DEIN_VAPID_PUBLIC_KEY';
-
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -2697,7 +2596,7 @@ function urlBase64ToUint8Array(base64String) {
 
 async function registerPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  if (VAPID_PUBLIC_KEY === 'DEIN_VAPID_PUBLIC_KEY') return; // not configured yet
+  if (VAPID_PUBLIC_KEY === 'DEIN_VAPID_PUBLIC_KEY') { showToast('⚠️ VAPID Key noch nicht eingetragen'); return; }
   try {
     const reg = await navigator.serviceWorker.ready;
     const permission = await Notification.requestPermission();
@@ -2713,7 +2612,7 @@ async function registerPush() {
       body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
     });
     showToast('🔔 Benachrichtigungen aktiviert!');
-  } catch(e) { console.log('Push failed:', e.message); }
+  } catch(e) { console.log('Push failed:', e.message); showToast('Fehler: ' + e.message); }
 }
 
 async function sendPush(type, payload) {
