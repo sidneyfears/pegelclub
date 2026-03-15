@@ -1737,27 +1737,9 @@ async function loadEvents() {
     if (isAdmin()) {
       adminBtns = buildTripAdminBtns(trip.id, trip.status || 'offen');
     }
-    const isOpen = openTripIds.has(trip.id);
-    const tripCard = document.createElement('div');
-    tripCard.className = 'trip-card';
 
-    let adminBtns = '';
-    if (isAdmin()) {
-      const tid = trip.id;
-      const ts = trip.status || 'offen';
-      adminBtns = '<div class="admin-actions" onclick="event.stopPropagation()">' +
-        (ts !== 'offen'       ? '<button class="admin-action-btn success" onclick="setTripStatus(\''+tid+'\',\'offen\')">🟢 Öffnen</button>' : '') +
-        (ts !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setTripStatus(\''+tid+'\',\'geschlossen\')">🔒 Schließen</button>' : '') +
-        (ts !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setTripStatus(\''+tid+'\',\'archiviert\')">📦 Archivieren</button>' : '') +
-        '<button class="admin-action-btn danger" onclick="deleteTrip(\''+tid+'\')">🗑️ Löschen</button>' +
-        '</div>';
-    }
-
-    const isOpen = openTripIds.has(trip.id);
-    const tripCard = document.createElement('div');
-    tripCard.className = 'trip-card';
     tripCard.innerHTML =
-      '<div class="trip-header" onclick="toggleTrip(\''+trip.id+'\')">' +
+      '<div class="trip-header" onclick="toggleTrip(\'' + trip.id + '\')">' +
         '<div class="trip-header-left">' +
           '<span style="font-size:28px">' + (trip.icon||'🗺️') + '</span>' +
           '<div>' +
@@ -1774,3 +1756,764 @@ async function loadEvents() {
         '<div class="trip-events" id="trip-events-inner-' + trip.id + '"></div>' +
         (isAdmin() ? '<div style="padding:0 12px 12px">' + adminBtns + '</div>' : '') +
       '</div>';
+
+    list.appendChild(tripCard);
+
+    const inner = tripCard.querySelector('#trip-events-inner-' + trip.id);
+    tevs.forEach(ev => renderEventCard(ev, allExp, inner, statusCls, statusLabel));
+
+  // Render unassigned events
+  const unassigned = (events || []).filter(e => !e.trip_id);
+  if (unassigned.length > 0) {
+    if (tripsWithEvents.length > 0) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--muted);margin:8px 0 10px';
+      sep.textContent = 'Ohne Trip';
+      list.appendChild(sep);
+    }
+    unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, statusLabel));
+  }
+}
+
+function toggleTrip(tripId) {
+  if (openTripIds.has(tripId)) { openTripIds.delete(tripId); } else { openTripIds.add(tripId); }
+  const el = document.getElementById('trip-events-' + tripId);
+  const chev = document.getElementById('chev-' + tripId);
+  if (el) el.style.display = openTripIds.has(tripId) ? 'block' : 'none';
+  if (chev) chev.classList.toggle('open', openTripIds.has(tripId));
+}
+
+function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
+  const evExp = (allExp || []).filter(e => e.event_id === ev.id);
+  const evTotal = evExp.reduce((s, x) => s + Number(x.amount), 0);
+  const memberCount = Object.keys(allProfiles).length || 1;
+  const perP = evTotal / memberCount;
+  const foodT  = evExp.filter(e => e.category==='food').reduce((s,x)=>s+Number(x.amount),0);
+  const drinkT = evExp.filter(e => e.category==='drinks').reduce((s,x)=>s+Number(x.amount),0);
+  const travT  = evExp.filter(e => e.category==='travel').reduce((s,x)=>s+Number(x.amount),0);
+  const st = ev.status || 'offen';
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = 'cursor:pointer;margin-bottom:10px';
+
+  let adminHtml = '';
+  if (isAdmin()) { adminHtml = buildEventAdminBtns(ev.id, st); }
+
+  card.innerHTML =
+    '<div style="display:flex;align-items:center;gap:14px">' +
+      '<div class="emoji-icon" style="background:var(--brand-light)">' + (ev.icon||'🎉') + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
+          '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">' + ev.name + '</span>' +
+          '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€' + evTotal.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">€' + perP.toFixed(2) + '/P</div>' +
+      '</div>' +
+    '</div>' +
+    (evTotal > 0 ? '<div class="prog-bar"><div style="width:' + (foodT/evTotal*100).toFixed(1) + '%;background:var(--food)" class="prog-seg"></div><div style="width:' + (drinkT/evTotal*100).toFixed(1) + '%;background:var(--drinks)" class="prog-seg"></div><div style="width:' + (travT/evTotal*100).toFixed(1) + '%;background:var(--travel)" class="prog-seg"></div></div>' : '') +
+    adminHtml;
+
+  card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
+  card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
+  card.querySelector('[style*="text-align:right"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
+  container.appendChild(card);
+}
+
+async function createTrip() {
+  if (!isAdmin()) { showToast('Nur Admins können Trips erstellen'); return; }
+  const name = document.getElementById('newTripName').value.trim();
+  const date = document.getElementById('newTripDate').value;
+  if (!name) { showToast('Name eingeben!'); return; }
+  const tripIcon = document.getElementById('newTripIcon').value || '🗺️';
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/trips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ name, icon: tripIcon, date: date ? formatDate(date) : '', status: 'offen', created_by: currentUser.id })
+    });
+    if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+    closeModal('modalNewTrip');
+    document.getElementById('newTripName').value = '';
+    document.getElementById('newTripDate').value = '';
+    await loadEvents();
+    showToast('🗺️ Trip erstellt!');
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+async function setTripStatus(btnOrId, status) {
+  var tripId = typeof btnOrId === 'string' ? btnOrId : btnOrId.getAttribute('data-id');
+  status = status || (typeof btnOrId === 'string' ? status : btnOrId.getAttribute('data-status'));
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/trips?id=eq.' + tripId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status })
+  });
+  await loadEvents();
+  const labels = { offen: '🟢 Geöffnet', geschlossen: '🔒 Geschlossen', archiviert: '📦 Archiviert' };
+  showToast('Trip ' + (labels[status]||status));
+}
+
+async function deleteTripById(btn) { deleteTrip(btn.getAttribute('data-id')); }
+async function deleteTrip(tripId) {
+  if (!confirm('Trip wirklich löschen?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/trips?id=eq.' + tripId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadEvents();
+  showToast('🗑️ Trip gelöscht');
+}
+
+async function setEventStatus(btnOrId, status) {
+  var eventId = typeof btnOrId === 'string' ? btnOrId : btnOrId.getAttribute('data-id');
+  status = status || (typeof btnOrId === 'string' ? status : btnOrId.getAttribute('data-status'));
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + eventId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status })
+  });
+  await loadEvents();
+  const labels = { offen: '🟢 Geöffnet', geschlossen: '🔒 Geschlossen', archiviert: '📦 Archiviert' };
+  showToast('Event ' + (labels[status]||status));
+}
+
+async function deleteEventById(btn) { deleteEvent(btn.getAttribute('data-id')); }
+async function deleteEvent(eventId) {
+  if (!confirm('Event und alle Ausgaben löschen?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + eventId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadEvents();
+  showToast('🗑️ Event gelöscht');
+}
+
+async function addNewEvent() {
+  if (!checkPermission()) return;
+  const name = document.getElementById('newEventName').value.trim();
+  const date = document.getElementById('newEventDate').value;
+  const tripId = document.getElementById('newEventTrip').value || null;
+  if (!name) { showToast('Name eingeben!'); return; }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ name, icon: selectedIcon, date: date ? formatDate(date) : '', created_by: currentUser.id, trip_id: tripId, status: 'offen' })
+    });
+    if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+    closeModal('modalNewEvent');
+    document.getElementById('newEventName').value = '';
+    document.getElementById('newEventDate').value = '';
+    if (tripId) openTripIds.add(tripId);
+    await loadEvents();
+    await sendPush('event', { sender: currentProfile?.display_name || 'Jemand', name });
+    showToast('Event erstellt!');
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════
+// EXPENSES
+// ════════════════════════════════════════════════
+function openExpenses(eventId, title) {
+  currentEventId = eventId;
+  document.getElementById('expEventTitle').textContent = title || 'Ausgaben';
+  loadExpenses();
+  const expBtn = document.querySelectorAll('.nav-btn')[1];
+  switchTab('expenses', expBtn);
+}
+
+async function loadExpenses() {
+  if (!currentEventId) return;
+  const { data: expenses } = await sb.from('expenses').select('*').eq('event_id', currentEventId);
+  const allExp = expenses || [];
+  const memberCount = Object.keys(allProfiles).length || 1;
+  const total = allExp.reduce((s, x) => s + Number(x.amount), 0);
+  const perP  = total / memberCount;
+
+  document.getElementById('expTotal').textContent     = '€' + total.toFixed(2);
+  document.getElementById('expPerPerson').textContent = '€' + perP.toFixed(2);
+
+  const grid = document.getElementById('splitGrid');
+  grid.innerHTML = '';
+  Object.values(allProfiles).forEach(p => {
+    const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
+    const owes = perP - paid;
+    const cell = document.createElement('div');
+    cell.className = 'split-cell';
+    cell.style.cssText = 'background:' + (owes>0?'#fff7ed':'#f0fdf4') + ';border:1px solid ' + (owes>0?'#fed7aa':'#bbf7d0');
+    const av = avatarEl(p, 26);
+    cell.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>' +
+      '<div style="font-size:11px;color:var(--muted)">Bezahlt</div>' +
+      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">€' + paid.toFixed(2) + '</div>' +
+      '<div style="margin-top:3px;font-size:12px;font-weight:600;color:' + (owes>0?'#f59e0b':'#10b981') + '">' +
+        (owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)) + '</div>';
+    cell.querySelector('div').prepend(av);
+    const nameSpan = document.createElement('span');
+    nameSpan.style.cssText = 'font-size:13px;font-weight:600';
+    nameSpan.textContent = p.display_name || p.email?.split('@')[0] || '?';
+    cell.querySelector('div').appendChild(nameSpan);
+    grid.appendChild(cell);
+  });
+
+  const settle = document.getElementById('settleList');
+  settle.innerHTML = '';
+  const payments = await loadPayments(currentEventId);
+  const balances = Object.values(allProfiles).map(p => {
+    const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
+    return { profile: p, balance: paid - perP };
+  });
+  const debtors   = balances.filter(b => b.balance < -0.01).sort((a,b) => a.balance - b.balance);
+  const creditors = balances.filter(b => b.balance >  0.01).sort((a,b) => b.balance - a.balance);
+
+  if (!debtors.length) {
+    settle.innerHTML = '<div style="text-align:center;padding:10px;color:var(--green);font-size:14px">✅ Alle quitt!</div>';
+  } else {
+    debtors.forEach(d => creditors.forEach(c => {
+      const amt = Math.min(Math.abs(d.balance), c.balance);
+      if (amt < 0.01) return;
+      const payment = payments.find(p => p.debtor_id === d.profile.id && p.creditor_id === c.profile.id);
+      const debtorConfirmed   = payment?.debtor_confirmed   || false;
+      const creditorConfirmed = payment?.creditor_confirmed || false;
+      const fullyPaid = debtorConfirmed && creditorConfirmed;
+      const isDebtor   = currentUser.id === d.profile.id;
+      const isCreditor = currentUser.id === c.profile.id;
+
+      const row = document.createElement('div');
+      row.className = 'settle-row';
+      row.style.flexDirection = 'column';
+      row.style.alignItems = 'stretch';
+      const topRow = document.createElement('div');
+      topRow.style.cssText = 'display:flex;align-items:center;gap:8px';
+      const avD = avatarEl(d.profile, 30);
+      const avC = avatarEl(c.profile, 30);
+      topRow.appendChild(avD);
+      topRow.innerHTML += '<div style="font-size:13px;flex:1"><b>' + (d.profile.display_name||'?') + '</b> zahlt an <b>' + (c.profile.display_name||'?') + '</b></div>';
+      topRow.appendChild(avC);
+      topRow.innerHTML += '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--brand);margin-left:6px">€' + amt.toFixed(2) + '</div>';
+      row.appendChild(topRow);
+      const status = document.createElement('div');
+      status.className = 'settle-status';
+      if (fullyPaid) {
+        status.innerHTML = '<div class="paid-badge">✅ Bezahlt & bestätigt von beiden</div>';
+      } else {
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px';
+        const btnD = document.createElement('button');
+        btnD.className = 'confirm-btn' + (debtorConfirmed ? ' confirmed' : (isDebtor ? ' mine' : ''));
+        btnD.disabled = debtorConfirmed || !isDebtor;
+        btnD.innerHTML = debtorConfirmed ? '✓ ' + (d.profile.display_name||'?') + ' hat gezahlt' : (isDebtor ? '💸 Ich habe gezahlt' : '⏳ ' + (d.profile.display_name||'?') + ' ausstehend');
+        if (isDebtor && !debtorConfirmed) btnD.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'debtor');
+        const btnC = document.createElement('button');
+        btnC.className = 'confirm-btn' + (creditorConfirmed ? ' confirmed' : (isCreditor ? ' mine' : ''));
+        btnC.disabled = creditorConfirmed || !isCreditor;
+        btnC.innerHTML = creditorConfirmed ? '✓ ' + (c.profile.display_name||'?') + ' hat empfangen' : (isCreditor ? '✅ Geld erhalten' : '⏳ ' + (c.profile.display_name||'?') + ' ausstehend');
+        if (isCreditor && !creditorConfirmed) btnC.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'creditor');
+        btnRow.appendChild(btnD);
+        btnRow.appendChild(btnC);
+        status.appendChild(btnRow);
+      }
+      row.appendChild(status);
+      settle.appendChild(row);
+    }));
+  }
+
+  const list = document.getElementById('expenseList');
+  list.innerHTML = '';
+  const catColor = { food:'var(--food)', drinks:'var(--drinks)', travel:'var(--travel)' };
+  const catLabel = { food:'Essen', drinks:'Trinken', travel:'Reise' };
+  const catIcon  = { food:'🍽️', drinks:'🍷', travel:'🚗' };
+  allExp.forEach((exp, i) => {
+    const p = allProfiles[exp.user_id];
+    const div = document.createElement('div');
+    div.className = 'card-sm';
+    div.innerHTML = '<div style="display:flex;align-items:center;gap:12px">' +
+      '<div class="emoji-icon" style="background:' + catColor[exp.category] + '18;width:42px;height:42px;border-radius:12px">' + (catIcon[exp.category]||'💰') + '</div>' +
+      '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + exp.description + '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-top:3px" id="exp-meta-' + exp.id + '">' +
+      '<span class="tag" style="background:' + catColor[exp.category] + '18;color:' + catColor[exp.category] + '">' + (catLabel[exp.category]||exp.category) + '</span></div></div>' +
+      '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:16px">€' + Number(exp.amount).toFixed(2) + '</div></div>';
+    if (p) {
+      const meta = div.querySelector('#exp-meta-' + exp.id);
+      const av = avatarEl(p, 16);
+      meta.prepend(av);
+      const nm = document.createElement('span');
+      nm.style.cssText = 'font-size:12px;color:var(--muted)';
+      nm.textContent = p.display_name || p.email?.split('@')[0] || '?';
+      av.after(nm);
+    }
+    list.appendChild(div);
+  });
+}
+
+async function addExpense() {
+  if (!checkPermission()) return;
+  const desc   = document.getElementById('expDesc').value.trim();
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const cat    = document.getElementById('expCat').value;
+  if (!desc)          { showToast('Beschreibung fehlt'); return; }
+  if (!amount || amount <= 0) { showToast('Betrag ungueltig'); return; }
+  if (!currentEventId){ showToast('Kein Event ausgewaehlt'); return; }
+  const evChk = (await sb.from('events').select('status').eq('id', currentEventId).single()).data;
+  if (evChk?.status === 'geschlossen') { showToast('🔒 Event ist geschlossen'); return; }
+  if (evChk?.status === 'archiviert')  { showToast('📦 Event ist archiviert'); return; }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ event_id: currentEventId, user_id: currentUser.id, amount, description: desc, category: cat })
+    });
+    if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+    closeModal('modalAddExpense');
+    document.getElementById('expDesc').value   = '';
+    document.getElementById('expAmount').value = '';
+    await loadExpenses();
+    await loadEvents();
+    await sendPush('expense', { sender: currentProfile?.display_name || 'Jemand', desc, amount });
+    showToast('Ausgabe gespeichert!');
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════
+// PAYMENTS
+// ════════════════════════════════════════════════
+async function loadPayments(eventId) {
+  const { data } = await sb.from('payments').select('*').eq('event_id', eventId);
+  return data || [];
+}
+
+async function confirmPayment(eventId, debtorId, creditorId, role) {
+  const payments = await loadPayments(eventId);
+  const existing = payments.find(p => p.debtor_id === debtorId && p.creditor_id === creditorId);
+  const { data: { session } } = await sb.auth.getSession();
+  if (existing) {
+    const update = {};
+    if (role === 'debtor') update.debtor_confirmed = true;
+    if (role === 'creditor') update.creditor_confirmed = true;
+    await fetch(SUPABASE_URL + '/rest/v1/payments?id=eq.' + existing.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(update)
+    });
+  } else {
+    const body = { event_id: eventId, debtor_id: debtorId, creditor_id: creditorId, debtor_confirmed: role==='debtor', creditor_confirmed: role==='creditor' };
+    await fetch(SUPABASE_URL + '/rest/v1/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(body)
+    });
+  }
+  const otherUserId = role === 'debtor' ? creditorId : debtorId;
+  await sendPush('payment', { sender: currentProfile?.display_name || 'Jemand', role, target_user_id: otherUserId });
+  showToast(role === 'debtor' ? '💸 Zahlung bestätigt!' : '✅ Eingang bestätigt!');
+  await loadExpenses();
+}
+
+// ════════════════════════════════════════════════
+// POLLS
+// ════════════════════════════════════════════════
+async function loadPolls() {
+  const { data: polls } = await sb.from('polls').select('*').order('created_at', { ascending: false });
+  const { data: votes  } = await sb.from('poll_votes').select('*');
+  const list = document.getElementById('pollList');
+  list.innerHTML = '';
+  if (!polls || !polls.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung!</div>';
+    return;
+  }
+  polls.forEach(poll => {
+    const pollStatus = poll.status || 'offen';
+    const pollStatusMap = { offen:{label:'🟢 Offen',cls:'status-offen'}, geschlossen:{label:'🔒 Geschlossen',cls:'status-geschlossen'}, archiviert:{label:'📦 Archiviert',cls:'status-archiviert'} };
+    if (pollStatus === 'archiviert') return;
+    const options = poll.options || [];
+    const pollVotes = (votes || []).filter(v => v.poll_id === poll.id);
+    const total = pollVotes.length;
+    const maxV  = Math.max(0, ...options.map((_, i) => pollVotes.filter(v => v.option_index === i).length));
+    const myVote = pollVotes.find(v => v.user_id === currentUser.id);
+    const card = document.createElement('div');
+    card.className = 'card';
+    let adminPollBtns = '';
+    if (isAdmin()) { adminPollBtns = buildPollAdminBtns(poll.id, pollStatus); }
+    let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<span class="status-badge ' + pollStatusMap[pollStatus].cls + '">' + pollStatusMap[pollStatus].label + '</span>' +
+      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span></div>' +
+      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">' + poll.question + '</div>';
+    options.forEach((opt, oi) => {
+      const cnt = pollVotes.filter(v => v.option_index === oi).length;
+      const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+      const winning = cnt === maxV && cnt > 0;
+      const voted   = myVote?.option_index === oi;
+      const voterIds = pollVotes.filter(v => v.option_index === oi).map(v => v.user_id);
+      const voterAvatars = voterIds.map(uid => {
+        const p = allProfiles[uid];
+        return '<div class="avatar" style="width:20px;height:20px;background:' + (p?.color||'#5b4fcf') + ';font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">' +
+          (p?.avatar_url ? '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>' : (p?.display_name||'?')[0].toUpperCase()) + '</div>';
+      }).join('');
+      inner += '<div class="poll-option ' + (winning?'winning':'') + '" onclick="castVote(' + poll.id + ',' + oi + ')">' +
+        '<div class="poll-fill" style="width:' + pct + '%;background:' + (winning?'var(--brand-light)':'#f5f4fb') + '"></div>' +
+        '<div class="poll-content">' +
+          '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:14px">' + opt + '</span>' + (voted?'<span style="color:var(--brand)">✓</span>':'') + '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px"><div style="display:flex;margin-right:2px">' + voterAvatars + '</div>' +
+          '<span style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:' + (winning?'var(--brand)':'var(--muted)') + '">' + pct + '%</span></div>' +
+        '</div></div>';
+    });
+    card.innerHTML = inner + adminPollBtns;
+    list.appendChild(card);
+  });
+}
+
+function buildPollAdminBtns(id, status) {
+  var btns = '<div class="admin-actions">';
+  if (status !== 'offen')       btns += '<button class="admin-action-btn success" onclick="setPollStatus(this)" data-id="' + id + '" data-status="offen">🟢 Öffnen</button>';
+  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setPollStatus(this)" data-id="' + id + '" data-status="geschlossen">🔒 Schließen</button>';
+  if (status !== 'archiviert')  btns += '<button class="admin-action-btn" onclick="setPollStatus(this)" data-id="' + id + '" data-status="archiviert">📦 Archivieren</button>';
+  btns += '<button class="admin-action-btn danger" onclick="deletePollById(this)" data-id="' + id + '">🗑️ Löschen</button>';
+  btns += '</div>';
+  return btns;
+}
+
+async function setPollStatus(btn) {
+  const pollId = btn.getAttribute('data-id');
+  const status = btn.getAttribute('data-status');
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + pollId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status })
+  });
+  await loadPolls();
+  const labels = { offen:'🟢 Geöffnet', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
+  showToast('Umfrage ' + (labels[status]||status));
+}
+
+async function deletePollById(btn) {
+  if (!confirm('Umfrage löschen?')) return;
+  const pollId = btn.getAttribute('data-id');
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + pollId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadPolls();
+  showToast('🗑️ Umfrage gelöscht');
+}
+
+async function castVote(pollId, optionIndex) {
+  if (!canWrite()) { showToast('⏳ Nur Mitglieder können abstimmen'); return; }
+  const poll = (await sb.from('polls').select('status').eq('id', pollId).single()).data;
+  if (poll?.status === 'geschlossen') { showToast('🔒 Abstimmung ist geschlossen'); return; }
+  await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUser.id);
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/poll_votes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ poll_id: pollId, user_id: currentUser.id, option_index: optionIndex })
+  });
+  await loadPolls();
+  showToast('✅ Stimme abgegeben!');
+}
+
+async function createPoll() {
+  if (!checkPermission()) return;
+  const q = document.getElementById('pollQ').value.trim();
+  const o1 = document.getElementById('pollO1').value.trim();
+  const o2 = document.getElementById('pollO2').value.trim();
+  const o3 = document.getElementById('pollO3').value.trim();
+  if (!q || !o1 || !o2) { showToast('Frage und mind. 2 Optionen nötig'); return; }
+  const options = [o1, o2];
+  if (o3) options.push(o3);
+  const { data: { session: ps } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + '/rest/v1/polls', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ps.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ question: q, options, created_by: currentUser.id })
+  });
+  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+  closeModal('modalNewPoll');
+  ['pollQ','pollO1','pollO2','pollO3'].forEach(id => document.getElementById(id).value = '');
+  await loadPolls();
+  await sendPush('poll', { sender: currentProfile?.display_name || 'Jemand', question: q });
+  showToast('🗳️ Abstimmung gestartet!');
+}
+
+// ════════════════════════════════════════════════
+// CHAT
+// ════════════════════════════════════════════════
+async function loadChat() {
+  const { data: msgs } = await sb.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
+  renderMessages(msgs || []);
+}
+
+function renderMessages(msgs) {
+  const el = document.getElementById('chatMessages');
+  el.innerHTML = '';
+  msgs.forEach((msg) => {
+    const isMe = msg.user_id === currentUser.id;
+    const p    = allProfiles[msg.user_id];
+    const time = new Date(msg.created_at).toLocaleTimeString('de', { hour:'2-digit', minute:'2-digit' });
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (isMe ? 'me' : '');
+    if (!isMe) { const av = avatarEl(p, 30); row.appendChild(av); }
+    const wrap = document.createElement('div');
+    wrap.innerHTML = (!isMe ? '<div style="font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px">' + (p?.display_name || p?.email?.split('@')[0] || '?') + '</div>' : '') +
+      '<div class="bubble ' + (isMe?'me':'them') + '">' + msg.text + '</div>' +
+      '<div class="msg-meta" style="text-align:' + (isMe?'right':'left') + ';padding:0 4px">' + time + '</div>';
+    row.appendChild(wrap);
+    el.appendChild(row);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const { data: { session: ms } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + '/rest/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ms.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ user_id: currentUser.id, text })
+  });
+  await sendPush('chat', { sender: currentProfile?.display_name || 'Jemand', text });
+}
+
+// ════════════════════════════════════════════════
+// REALTIME
+// ════════════════════════════════════════════════
+function subscribeRealtime() {
+  sb.channel('pegelclub-realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async () => {
+      if (document.getElementById('chatView').style.display !== 'none') await loadChat();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
+      await loadExpenses(); await loadEvents();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, async () => {
+      await loadPolls();
+    })
+    .subscribe();
+}
+
+// ════════════════════════════════════════════════
+// ADMIN PANEL
+// ════════════════════════════════════════════════
+async function loadAdminPanel() {
+  if (!isAdmin()) return;
+  const { data: pending } = await sb.from('profiles').select('*').eq('role', 'anwaerter');
+  const pendingList = document.getElementById('pendingList');
+  pendingList.innerHTML = '';
+  if (!pending || !pending.length) {
+    pendingList.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Keine Anwärter ✅</div>';
+  } else {
+    pending.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'pending-card';
+      const av = avatarEl(p, 42);
+      card.appendChild(av);
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      info.innerHTML = '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email) + '</div><div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+      card.appendChild(info);
+      const btn = document.createElement('button');
+      btn.className = 'btn-sm';
+      btn.style.background = 'var(--green)';
+      btn.textContent = 'Freischalten';
+      btn.onclick = () => changeRole(p.id, 'mitglied');
+      card.appendChild(btn);
+      pendingList.appendChild(card);
+    });
+  }
+  const { data: allP } = await sb.from('profiles').select('*').order('created_at');
+  const adminList = document.getElementById('adminMemberList');
+  adminList.innerHTML = '';
+  (allP || []).forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+    const av = avatarEl(p, 40);
+    row.appendChild(av);
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.innerHTML = '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email) + '</div><div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+    row.appendChild(info);
+    if (p.id === currentUser.id) {
+      const badge = document.createElement('span');
+      badge.className = 'role-badge role-admin';
+      badge.textContent = '⭐ Du';
+      row.appendChild(badge);
+    } else {
+      const sel = document.createElement('select');
+      sel.className = 'role-select';
+      sel.innerHTML = '<option value="anwaerter"' + (p.role==='anwaerter'?' selected':'') + '>⏳ Anwärter</option>' +
+        '<option value="mitglied"' + (p.role==='mitglied'?' selected':'') + '>✅ Mitglied</option>' +
+        '<option value="admin"' + (p.role==='admin'?' selected':'') + '>⭐ Admin</option>';
+      sel.onchange = (e) => changeRole(p.id, e.target.value);
+      row.appendChild(sel);
+      const delBtn = document.createElement('button');
+      delBtn.style.cssText = 'margin-left:8px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600';
+      delBtn.textContent = '🗑️';
+      delBtn.onclick = () => deleteUser(p.id, p.display_name || p.email);
+      row.appendChild(delBtn);
+    }
+    adminList.appendChild(row);
+  });
+}
+
+async function changeRole(userId, newRole) {
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ role: newRole })
+  });
+  await loadAllProfiles();
+  await loadAdminPanel();
+  const roleLabels = { anwaerter:'Anwärter', mitglied:'Mitglied', admin:'Admin' };
+  showToast('✅ Rolle: ' + roleLabels[newRole]);
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm('Nutzer "' + name + '" wirklich löschen?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadAllProfiles();
+  await loadAdminPanel();
+  showToast('🗑️ Nutzer entfernt');
+}
+
+// ════════════════════════════════════════════════
+// PERMISSIONS
+// ════════════════════════════════════════════════
+function canWrite() { return currentProfile?.role === 'mitglied' || currentProfile?.role === 'admin'; }
+function isAdmin()  { return currentProfile?.role === 'admin'; }
+function checkPermission() {
+  if (!canWrite()) { showToast('⏳ Nur Mitglieder können Inhalte erstellen'); return false; }
+  return true;
+}
+
+// ════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════
+function switchTab(tab, btn) {
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.remove('active');
+    const d = b.querySelector('.nav-dot');
+    if (d) d.remove();
+  });
+  if (btn) {
+    btn.classList.add('active');
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    btn.appendChild(dot);
+  }
+  const mainContent = document.getElementById('mainContent');
+  const chatView    = document.getElementById('chatView');
+  if (tab === 'chat') {
+    mainContent.style.display = 'none';
+    chatView.style.display    = 'flex';
+    document.getElementById('headerTitle').textContent = 'Chat 💬';
+    loadChat();
+  } else {
+    mainContent.style.display = '';
+    chatView.style.display    = 'none';
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + tab).classList.add('active');
+    const titles = { events:'Pegelclub 🍻', expenses:'Ausgaben 💳', polls:'Abstimmung 🗳️', members:'Mitglieder 👥', profile:'Mein Profil 👤', admin:'Admin ⚙️' };
+    document.getElementById('headerTitle').textContent = titles[tab] || 'Pegelclub';
+    if (tab === 'polls')   loadPolls();
+    if (tab === 'members') renderMembers();
+    if (tab === 'profile') { renderProfileView(); checkPushStatus(); }
+    if (tab === 'admin')   loadAdminPanel();
+    if (tab === 'expenses' && currentEventId) loadExpenses();
+    mainContent.scrollTop = 0;
+  }
+}
+
+// ════════════════════════════════════════════════
+// PUSH NOTIFICATIONS
+// ════════════════════════════════════════════════
+const VAPID_PUBLIC_KEY = 'BMP2KgHflz9dEvpi0P1ddO0zgJWw6TGc5PcgyT-OeE0y2IT0LzDE8IXuewiPykjFc7TCNJ8GCGGXBxdpxylv2HU';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const out = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
+  return out;
+}
+
+async function registerPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { showToast('Push nicht unterstützt'); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { showToast('Benachrichtigungen deaktiviert'); return; }
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const { data: { session } } = await sb.auth.getSession();
+    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
+    });
+    showToast('🔔 Benachrichtigungen aktiviert!');
+    checkPushStatus();
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+async function sendPush(type, payload) {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    await fetch(SUPABASE_URL + '/functions/v1/send-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ type, payload, sender_id: currentUser.id })
+    });
+  } catch(e) { console.log('Push send skipped:', e.message); }
+}
+
+async function checkPushStatus() {
+  const btn = document.getElementById('pushBtn');
+  if (!btn) return;
+  if (!('Notification' in window)) { btn.textContent = '🔔 Push nicht verfügbar'; btn.disabled = true; return; }
+  if (Notification.permission === 'granted') {
+    btn.textContent = '✅ Benachrichtigungen aktiv';
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+  } else if (Notification.permission === 'denied') {
+    btn.textContent = '🚫 Benachrichtigungen blockiert';
+    btn.disabled = true;
+  } else {
+    btn.textContent = '🔔 Benachrichtigungen aktivieren';
+    btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+  }
+}
+
+async function togglePushNotifications() {
+  if (Notification.permission === 'granted') { showToast('✅ Benachrichtigungen bereits aktiv!'); return; }
+  await registerPush();
+}
+
+function initServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW nicht verfügbar:', err.message));
+  }
+}
+
+initServiceWorker();
+init();
