@@ -1097,7 +1097,7 @@ if (!Promise.allSettled) {
             </div>
           </div>
 
-          <button id="pushBtn" class="btn-primary" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#10b981,#059669)" id="pushBtn" onclick="togglePushNotifications()">🔔 Benachrichtigungen aktivieren</button>
+          <button id="pushBtn" class="btn-primary" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#10b981,#059669)" onclick="togglePushNotifications()">🔔 Benachrichtigungen aktivieren</button>
           <button class="btn-primary" onclick="registerPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#d97706)">
             🔔 Benachrichtigungen aktivieren
           </button>
@@ -1292,7 +1292,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // ════════════════════════════════════════════════
 // ⚙️ PUSH CONFIG – VAPID Public Key eintragen
 // ════════════════════════════════════════════════
-const VAPID_PUBLIC_KEY = 'BMP2KgHflz9dEvpi0P1ddO0zgJWw6TGc5PcgyT-OeE0y2IT0LzDE8IXuewiPykjFc7TCNJ8GCGGXBxdpxylv2HU';
+const VAPID_PUBLIC_KEY = 'BMP2KgHflz9dEvpi0P1ddO0zgJWw6TGc5PcgyT-OeE0y2IT0LzDE8IXuewiPykjFc7TCNJ8GCGGXBxdpxylv2HUDEIN_VAPID_PUBLIC_KEY'; // ← nach Setup eintragen
 
 // ════════════════════════════════════════════════
 // STATE
@@ -1715,34 +1715,34 @@ async function loadEvents() {
 
     let adminBtns = '';
     if (isAdmin()) {
-      adminBtns = `<div class="admin-actions" onclick="event.stopPropagation()">
-        ${trip.status !== 'offen'       ? `<button class="admin-action-btn success" onclick="setTripStatus('${trip.id}','offen')">🟢 Öffnen</button>` : ''}
-        ${trip.status !== 'geschlossen' ? `<button class="admin-action-btn warn" onclick="setTripStatus('${trip.id}','geschlossen')">🔒 Schließen</button>` : ''}
-        ${trip.status !== 'archiviert'  ? `<button class="admin-action-btn" onclick="setTripStatus('${trip.id}','archiviert')">📦 Archivieren</button>` : ''}
-        <button class="admin-action-btn danger" onclick="deleteTrip('${trip.id}')">🗑️ Löschen</button>
-      </div>`;
+      adminBtns = '<div class="admin-actions" onclick="event.stopPropagation()">' +
+        (trip.status !== 'offen'       ? '<button class="admin-action-btn success" onclick="setTripStatus('' + trip.id + '','offen')">🟢 Öffnen</button>' : '') +
+        (trip.status !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setTripStatus('' + trip.id + '','geschlossen')">🔒 Schließen</button>' : '') +
+        (trip.status !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setTripStatus('' + trip.id + '','archiviert')">📦 Archivieren</button>' : '') +
+        '<button class="admin-action-btn danger" onclick="deleteTrip('' + trip.id + '')">🗑️ Löschen</button>' +
+        '</div>';
     }
 
-    tripCard.innerHTML = `
-      <div class="trip-header" onclick="toggleTrip('${trip.id}')">
-        <div class="trip-header-left">
-          <span style="font-size:28px">${trip.icon||'🗺️'}</span>
-          <div>
-            <div class="trip-title">${trip.name}</div>
-            <div class="trip-meta">${tevs.length} Events · <span class="status-badge ${statusCls[trip.status||'offen']}">${statusLabel[trip.status||'offen']}</span></div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="trip-total">€${tripTotal.toFixed(2)}</div>
-          <div class="trip-chevron${isOpen ? ' open' : ''}" id="chev-${trip.id}">▾</div>
-        </div>
-      </div>
-      <div id="trip-events-${trip.id}" style="display:${isOpen ? 'block' : 'none'}">
-        <div class="trip-events" id="trip-events-inner-${trip.id}"></div>
-        ${isAdmin() ? `<div style="padding:0 12px 12px">${adminBtns}</div>` : ''}
-      </div>`;
+    tripCard.innerHTML =
+      '<div class="trip-header" onclick="toggleTrip('' + trip.id + '')">' +
+        '<div class="trip-header-left">' +
+          '<span style="font-size:28px">' + (trip.icon||'🗺️') + '</span>' +
+          '<div>' +
+            '<div class="trip-title">' + trip.name + '</div>' +
+            '<div class="trip-meta">' + tevs.length + ' Events · <span class="status-badge ' + statusCls[trip.status||'offen'] + '">' + statusLabel[trip.status||'offen'] + '</span></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="trip-total">€' + tripTotal.toFixed(2) + '</div>' +
+          '<div class="trip-chevron' + (isOpen ? ' open' : '') + '" id="chev-' + trip.id + '">▾</div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="trip-events-' + trip.id + '" style="display:' + (isOpen ? 'block' : 'none') + '">' +
+        '<div class="trip-events" id="trip-events-inner-' + trip.id + '"></div>' +
+        (isAdmin() ? '<div style="padding:0 12px 12px">' + adminBtns + '</div>' : '') +
+      '</div>';
 
-        list.appendChild(tripCard);
+    list.appendChild(tripCard);
 
     // Render events inside trip
     const inner = tripCard.querySelector('#trip-events-inner-' + trip.id);
@@ -1789,41 +1789,37 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
 
   let adminHtml = '';
   if (isAdmin()) {
-    adminHtml = `<div class="admin-actions" onclick="event.stopPropagation()">
-      ${st !== 'offen'       ? `<button class="admin-action-btn success" onclick="setEventStatus('${ev.id}','offen')">🟢 Öffnen</button>` : ''}
-      ${st !== 'geschlossen' ? `<button class="admin-action-btn warn" onclick="setEventStatus('${ev.id}','geschlossen')">🔒 Schließen</button>` : ''}
-      ${st !== 'archiviert'  ? `<button class="admin-action-btn" onclick="setEventStatus('${ev.id}','archiviert')">📦 Archivieren</button>` : ''}
-      <button class="admin-action-btn danger" onclick="deleteEvent('${ev.id}')">🗑️ Löschen</button>
-    </div>`;
+    adminHtml = '<div class="admin-actions" onclick="event.stopPropagation()">' +
+      (st !== 'offen'       ? '<button class="admin-action-btn success" onclick="setEventStatus('' + ev.id + '','offen')">🟢 Öffnen</button>' : '') +
+      (st !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setEventStatus('' + ev.id + '','geschlossen')">🔒 Schließen</button>' : '') +
+      (st !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setEventStatus('' + ev.id + '','archiviert')">📦 Archivieren</button>' : '') +
+      '<button class="admin-action-btn danger" onclick="deleteEvent('' + ev.id + '')">🗑️ Löschen</button>' +
+      '</div>';
   }
 
-  card.innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px">
-      <div class="emoji-icon" style="background:var(--brand-light)">${ev.icon||'🎉'}</div>
-      <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-          <span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">${ev.name}</span>
-          <span class="status-badge ${statusCls[st]}">${statusLabel[st]}</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted)">${ev.date||''} · ${evExp.length} Ausgaben</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€${evTotal.toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--muted)">€${perP.toFixed(2)}/P</div>
-      </div>
-    </div>
-    ${evTotal > 0 ? `<div class="prog-bar">
-      <div style="width:${(foodT/evTotal*100).toFixed(1)}%;background:var(--food)" class="prog-seg"></div>
-      <div style="width:${(drinkT/evTotal*100).toFixed(1)}%;background:var(--drinks)" class="prog-seg"></div>
-      <div style="width:${(travT/evTotal*100).toFixed(1)}%;background:var(--travel)" class="prog-seg"></div>
-    </div>` : ''}
-    ${adminHtml}`;
+  card.innerHTML =
+    '<div style="display:flex;align-items:center;gap:14px">' +
+      '<div class="emoji-icon" style="background:var(--brand-light)">' + (ev.icon||'🎉') + '</div>' +
+      '<div style="flex:1">' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
+          '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">' + ev.name + '</span>' +
+          '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€' + evTotal.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">€' + perP.toFixed(2) + '/P</div>' +
+      '</div>' +
+    '</div>' +
+    (evTotal > 0 ? '<div class="prog-bar"><div style="width:' + (foodT/evTotal*100).toFixed(1) + '%;background:var(--food)" class="prog-seg"></div><div style="width:' + (drinkT/evTotal*100).toFixed(1) + '%;background:var(--drinks)" class="prog-seg"></div><div style="width:' + (travT/evTotal*100).toFixed(1) + '%;background:var(--travel)" class="prog-seg"></div></div>' : '') +
+    adminHtml;
 
   card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="text-align:right"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
 
-    container.appendChild(card);
+  container.appendChild(card);
 }
 
 async function createTrip() {
@@ -2153,13 +2149,50 @@ async function loadPolls() {
 
     let adminPollBtns = '';
     if (isAdmin()) {
-      adminPollBtns = `<div class="admin-actions">
-        ${pollStatus !== 'offen'       ? `<button class="admin-action-btn success" onclick="setPollStatus(${poll.id},'offen')">🟢 Öffnen</button>` : ''}
-        ${pollStatus !== 'geschlossen' ? `<button class="admin-action-btn warn" onclick="setPollStatus(${poll.id},'geschlossen')">🔒 Schließen</button>` : ''}
-        ${pollStatus !== 'archiviert'  ? `<button class="admin-action-btn" onclick="setPollStatus(${poll.id},'archiviert')">📦 Archivieren</button>` : ''}
-        <button class="admin-action-btn danger" onclick="deletePoll(${poll.id})">🗑️ Löschen</button>
-      </div>`;
+      adminPollBtns =
+        '<div class="admin-actions">' +
+        (pollStatus !== 'offen'       ? '<button class="admin-action-btn success" onclick="setPollStatus(' + poll.id + ','offen')">🟢 Öffnen</button>' : '') +
+        (pollStatus !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setPollStatus(' + poll.id + ','geschlossen')">🔒 Schließen</button>' : '') +
+        (pollStatus !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setPollStatus(' + poll.id + ','archiviert')">📦 Archivieren</button>' : '') +
+        '<button class="admin-action-btn danger" onclick="deletePoll(' + poll.id + ')">🗑️ Löschen</button>' +
+        '</div>';
     }
+
+    let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<span class="status-badge ' + pollStatusMap[pollStatus].cls + '">' + pollStatusMap[pollStatus].label + '</span>' +
+      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span>' +
+      '</div>' +
+      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">' + poll.question + '</div>';
+
+    options.forEach((opt, oi) => {
+      const cnt = pollVotes.filter(v => v.option_index === oi).length;
+      const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+      const winning = cnt === maxV && cnt > 0;
+      const voted   = myVote?.option_index === oi;
+
+      const voterIds = pollVotes.filter(v => v.option_index === oi).map(v => v.user_id);
+      const voterAvatars = voterIds.map(uid => {
+        const p = allProfiles[uid];
+        return `<div class="avatar" style="width:20px;height:20px;background:${p?.color||'#5b4fcf'};font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">
+          ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : (p?.display_name||'?')[0].toUpperCase()}
+        </div>`;
+      }).join('');
+
+      inner += `
+        <div class="poll-option ${winning?'winning':''}" onclick="castVote(${poll.id}, ${oi})">
+          <div class="poll-fill" style="width:${pct}%;background:${winning?'var(--brand-light)':'#f5f4fb'}"></div>
+          <div class="poll-content">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-weight:600;font-size:14px">${opt}</span>
+              ${voted ? '<span style="color:var(--brand)">✓</span>' : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;margin-right:2px">${voterAvatars}</div>
+              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${winning?'var(--brand)':'var(--muted)'}">${pct}%</span>
+            </div>
+          </div>
+        </div>`;
+    });
 
     card.innerHTML = inner + adminPollBtns;
     list.appendChild(card);
@@ -2582,9 +2615,110 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // ════════════════════════════════════════════════
 
 // ⚠️ VAPID PUBLIC KEY – nach Generierung hier eintragen:
+const VAPID_PUBLIC_KEY = 'DEIN_VAPID_PUBLIC_KEY';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function initServiceWorker() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    await navigator.serviceWorker.register('/sw.js');
+  } catch(e) {
+    console.warn('SW registration failed:', e);
+  }
+}
+
+async function togglePushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('❌ Dein Browser unterstützt keine Push-Benachrichtigungen');
+    return;
+  }
+
+  const reg = await navigator.serviceWorker.ready;
+  const existing = await reg.pushManager.getSubscription();
+
+  if (existing) {
+    await existing.unsubscribe();
+    await savePushSubscription(null);
+    updatePushBtn(false);
+    showToast('🔕 Benachrichtigungen deaktiviert');
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('❌ Berechtigung verweigert – bitte in den Einstellungen aktivieren');
+      return;
+    }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    await savePushSubscription(sub);
+    updatePushBtn(true);
+    showToast('🔔 Benachrichtigungen aktiviert!');
+  } catch(e) {
+    showToast('Fehler: ' + e.message);
+  }
+}
+
+async function savePushSubscription(sub) {
+  const { data: { session } } = await sb.auth.getSession();
+  const subJson = sub ? JSON.stringify(sub) : null;
+  await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  if (subJson) {
+    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ user_id: currentUser.id, subscription: subJson })
+    });
+  }
+}
+
+async function updatePushBtn(active) {
+  const btn = document.getElementById('pushBtn');
+  if (!btn) return;
+  if (active) {
+    btn.textContent = '🔕 Benachrichtigungen deaktivieren';
+    btn.style.background = '#6b7280';
+  } else {
+    btn.textContent = '🔔 Benachrichtigungen aktivieren';
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+  }
+}
+
+async function checkPushStatus() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    const btn = document.getElementById('pushBtn');
+    if (btn) { btn.textContent = '❌ Nicht unterstützt'; btn.disabled = true; btn.style.background = '#9ca3af'; }
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready.catch(() => null);
+  if (!reg) return;
+  const sub = await reg.pushManager.getSubscription().catch(() => null);
+  updatePushBtn(!!sub);
+}
+
 // ════════════════════════════════════════════════
-// PUSH NOTIFICATIONS
+// START
 // ════════════════════════════════════════════════
+
+// ⚠️ Nach Schritt 2 der Anleitung: VAPID Public Key hier eintragen
+const VAPID_PUBLIC_KEY = 'DEIN_VAPID_PUBLIC_KEY';
+
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -2596,7 +2730,7 @@ function urlBase64ToUint8Array(base64String) {
 
 async function registerPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  if (VAPID_PUBLIC_KEY === 'DEIN_VAPID_PUBLIC_KEY') { showToast('⚠️ VAPID Key noch nicht eingetragen'); return; }
+  if (VAPID_PUBLIC_KEY === 'DEIN_VAPID_PUBLIC_KEY') return; // not configured yet
   try {
     const reg = await navigator.serviceWorker.ready;
     const permission = await Notification.requestPermission();
@@ -2612,7 +2746,7 @@ async function registerPush() {
       body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
     });
     showToast('🔔 Benachrichtigungen aktiviert!');
-  } catch(e) { console.log('Push failed:', e.message); showToast('Fehler: ' + e.message); }
+  } catch(e) { console.log('Push failed:', e.message); }
 }
 
 async function sendPush(type, payload) {
@@ -2625,72 +2759,6 @@ async function sendPush(type, payload) {
       body: JSON.stringify({ type, payload, sender_id: currentUser.id })
     });
   } catch(e) { console.log('Push send skipped:', e.message); }
-}
-
-async function checkPushStatus() {
-  const btn = document.getElementById('pushBtn');
-  if (!btn) return;
-  if (!('Notification' in window)) {
-    btn.textContent = '🔔 Benachrichtigungen nicht unterstützt';
-    btn.disabled = true;
-    return;
-  }
-  if (Notification.permission === 'granted') {
-    btn.textContent = '✅ Benachrichtigungen aktiv';
-    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-  } else if (Notification.permission === 'denied') {
-    btn.textContent = '🚫 Benachrichtigungen blockiert';
-    btn.disabled = true;
-  } else {
-    btn.textContent = '🔔 Benachrichtigungen aktivieren';
-    btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-  }
-}
-
-async function togglePushNotifications() {
-  if (Notification.permission === 'granted') {
-    showToast('✅ Benachrichtigungen bereits aktiv!');
-    return;
-  }
-  await registerPush();
-  await checkPushStatus();
-}
-
-function initServiceWorker() {
-  // Service Worker via externe sw.js Datei (für Push-Benachrichtigungen)
-  // Wird aktiv sobald sw.js im Root des Hosting-Verzeichnisses liegt
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW nicht verfügbar (kein Push):', err.message));
-  }
-});
-
-// Klick auf Benachrichtigung → App öffnen/fokussieren
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  const targetUrl = (e.notification.data && e.notification.data.url) || self.location.origin;
-
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // Offenes Fenster fokussieren falls vorhanden
-      for (const client of list) {
-        if (client.url.startsWith(targetUrl) && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // Sonst neu öffnen
-      return clients.openWindow(targetUrl);
-    })
-  );
-});
-
-`;
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl)
-    .then(reg => console.log('SW registered via blob'))
-    .catch(err => console.log('SW error:', err));
 }
 
 initServiceWorker();
