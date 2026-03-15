@@ -1789,37 +1789,41 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
 
   let adminHtml = '';
   if (isAdmin()) {
-    adminHtml = '<div class="admin-actions" onclick="event.stopPropagation()">' +
-      (st !== 'offen'       ? '<button class="admin-action-btn success" onclick="setEventStatus('' + ev.id + '','offen')">🟢 Öffnen</button>' : '') +
-      (st !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setEventStatus('' + ev.id + '','geschlossen')">🔒 Schließen</button>' : '') +
-      (st !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setEventStatus('' + ev.id + '','archiviert')">📦 Archivieren</button>' : '') +
-      '<button class="admin-action-btn danger" onclick="deleteEvent('' + ev.id + '')">🗑️ Löschen</button>' +
-      '</div>';
+    adminHtml = `<div class="admin-actions" onclick="event.stopPropagation()">
+      ${st !== 'offen'       ? `<button class="admin-action-btn success" onclick="setEventStatus('${ev.id}','offen')">🟢 Öffnen</button>` : ''}
+      ${st !== 'geschlossen' ? `<button class="admin-action-btn warn" onclick="setEventStatus('${ev.id}','geschlossen')">🔒 Schließen</button>` : ''}
+      ${st !== 'archiviert'  ? `<button class="admin-action-btn" onclick="setEventStatus('${ev.id}','archiviert')">📦 Archivieren</button>` : ''}
+      <button class="admin-action-btn danger" onclick="deleteEvent('${ev.id}')">🗑️ Löschen</button>
+    </div>`;
   }
 
-  card.innerHTML =
-    '<div style="display:flex;align-items:center;gap:14px">' +
-      '<div class="emoji-icon" style="background:var(--brand-light)">' + (ev.icon||'🎉') + '</div>' +
-      '<div style="flex:1">' +
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
-          '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">' + ev.name + '</span>' +
-          '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
-        '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
-      '</div>' +
-      '<div style="text-align:right">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€' + evTotal.toFixed(2) + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">€' + perP.toFixed(2) + '/P</div>' +
-      '</div>' +
-    '</div>' +
-    (evTotal > 0 ? '<div class="prog-bar"><div style="width:' + (foodT/evTotal*100).toFixed(1) + '%;background:var(--food)" class="prog-seg"></div><div style="width:' + (drinkT/evTotal*100).toFixed(1) + '%;background:var(--drinks)" class="prog-seg"></div><div style="width:' + (travT/evTotal*100).toFixed(1) + '%;background:var(--travel)" class="prog-seg"></div></div>' : '') +
-    adminHtml;
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="emoji-icon" style="background:var(--brand-light)">${ev.icon||'🎉'}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+          <span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">${ev.name}</span>
+          <span class="status-badge ${statusCls[st]}">${statusLabel[st]}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${ev.date||''} · ${evExp.length} Ausgaben</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€${evTotal.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--muted)">€${perP.toFixed(2)}/P</div>
+      </div>
+    </div>
+    ${evTotal > 0 ? `<div class="prog-bar">
+      <div style="width:${(foodT/evTotal*100).toFixed(1)}%;background:var(--food)" class="prog-seg"></div>
+      <div style="width:${(drinkT/evTotal*100).toFixed(1)}%;background:var(--drinks)" class="prog-seg"></div>
+      <div style="width:${(travT/evTotal*100).toFixed(1)}%;background:var(--travel)" class="prog-seg"></div>
+    </div>` : ''}
+    ${adminHtml}`;
 
   card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="text-align:right"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
 
-  container.appendChild(card);
+    container.appendChild(card);
 }
 
 async function createTrip() {
@@ -2149,50 +2153,13 @@ async function loadPolls() {
 
     let adminPollBtns = '';
     if (isAdmin()) {
-      adminPollBtns =
-        '<div class="admin-actions">' +
-        (pollStatus !== 'offen'       ? '<button class="admin-action-btn success" onclick="setPollStatus(' + poll.id + ','offen')">🟢 Öffnen</button>' : '') +
-        (pollStatus !== 'geschlossen' ? '<button class="admin-action-btn warn" onclick="setPollStatus(' + poll.id + ','geschlossen')">🔒 Schließen</button>' : '') +
-        (pollStatus !== 'archiviert'  ? '<button class="admin-action-btn" onclick="setPollStatus(' + poll.id + ','archiviert')">📦 Archivieren</button>' : '') +
-        '<button class="admin-action-btn danger" onclick="deletePoll(' + poll.id + ')">🗑️ Löschen</button>' +
-        '</div>';
+      adminPollBtns = `<div class="admin-actions">
+        ${pollStatus !== 'offen'       ? `<button class="admin-action-btn success" onclick="setPollStatus(${poll.id},'offen')">🟢 Öffnen</button>` : ''}
+        ${pollStatus !== 'geschlossen' ? `<button class="admin-action-btn warn" onclick="setPollStatus(${poll.id},'geschlossen')">🔒 Schließen</button>` : ''}
+        ${pollStatus !== 'archiviert'  ? `<button class="admin-action-btn" onclick="setPollStatus(${poll.id},'archiviert')">📦 Archivieren</button>` : ''}
+        <button class="admin-action-btn danger" onclick="deletePoll(${poll.id})">🗑️ Löschen</button>
+      </div>`;
     }
-
-    let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
-      '<span class="status-badge ' + pollStatusMap[pollStatus].cls + '">' + pollStatusMap[pollStatus].label + '</span>' +
-      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span>' +
-      '</div>' +
-      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">' + poll.question + '</div>';
-
-    options.forEach((opt, oi) => {
-      const cnt = pollVotes.filter(v => v.option_index === oi).length;
-      const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
-      const winning = cnt === maxV && cnt > 0;
-      const voted   = myVote?.option_index === oi;
-
-      const voterIds = pollVotes.filter(v => v.option_index === oi).map(v => v.user_id);
-      const voterAvatars = voterIds.map(uid => {
-        const p = allProfiles[uid];
-        return `<div class="avatar" style="width:20px;height:20px;background:${p?.color||'#5b4fcf'};font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">
-          ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : (p?.display_name||'?')[0].toUpperCase()}
-        </div>`;
-      }).join('');
-
-      inner += `
-        <div class="poll-option ${winning?'winning':''}" onclick="castVote(${poll.id}, ${oi})">
-          <div class="poll-fill" style="width:${pct}%;background:${winning?'var(--brand-light)':'#f5f4fb'}"></div>
-          <div class="poll-content">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-weight:600;font-size:14px">${opt}</span>
-              ${voted ? '<span style="color:var(--brand)">✓</span>' : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="display:flex;margin-right:2px">${voterAvatars}</div>
-              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${winning?'var(--brand)':'var(--muted)'}">${pct}%</span>
-            </div>
-          </div>
-        </div>`;
-    });
 
     card.innerHTML = inner + adminPollBtns;
     list.appendChild(card);
