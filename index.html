@@ -1749,10 +1749,15 @@ async function loadExpenses() {
   const titleEl = document.getElementById('expEventTitle');
   if (titleEl && !currentEventId) titleEl.textContent = '💰 Alle Ausgaben';
 
+  // Guard: bail out if a newer render has started
+  if (myRender !== _expensesRenderCount) return;
+
   // Split grid
   const grid = document.getElementById('splitGrid');
   grid.innerHTML = '';
   const paymentsForGrid = await loadPayments(currentEventId);
+  // Guard again after the await
+  if (myRender !== _expensesRenderCount) return;
   Object.values(allProfiles).forEach(p => {
     const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
     const owes = perP - paid;
@@ -1775,8 +1780,6 @@ async function loadExpenses() {
     cell.querySelector('div').appendChild(nameSpan);
     grid.appendChild(cell);
   });
-
-  if (myRender !== _expensesRenderCount) return;
 
   // Settlement section
   const settle = document.getElementById('settleList');
