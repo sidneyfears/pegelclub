@@ -1639,8 +1639,12 @@ function openExpenses(eventId, title) {
   switchTab('expenses', expBtn);
 }
 
+let _loadingExpenses = false;
 async function loadExpenses() {
   if (!currentEventId) return;
+  if (_loadingExpenses) return;
+  _loadingExpenses = true;
+  try {
   const { data: expenses } = await sb.from('expenses').select('*').eq('event_id', currentEventId);
   const allExp = expenses || [];
   const memberCount = Object.keys(allProfiles).length || 1;
@@ -1802,6 +1806,9 @@ async function loadExpenses() {
     }
     list.appendChild(div);
   });
+  } finally {
+    _loadingExpenses = false;
+  }
 }
 
 async function addExpense() {
@@ -2097,8 +2104,11 @@ function subscribeRealtime() {
       if (document.getElementById('chatView').style.display !== 'none') await loadChat();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
-      await loadExpenses();
       await loadEvents();
+      const activeTab = document.querySelector('.nav-btn.active')?.textContent?.trim();
+      if (document.getElementById('view-expenses')?.classList.contains('active')) {
+        await loadExpenses();
+      }
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, async () => {
       await loadPolls();
@@ -2167,7 +2177,8 @@ async function markSettled(eventId, debtorId, creditorId, existing) {
     });
   }
   showToast('✅ Abgerechnet!');
-  await loadExpenses();
+  // Small delay to avoid race condition with realtime listener
+  setTimeout(() => loadExpenses(), 300);
 }
 
 async function confirmPayment(eventId, debtorId, creditorId, role) {
