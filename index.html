@@ -969,7 +969,7 @@ select.input option { background: var(--bg2); color: var(--text); }
     </div>
     <div class="receipt-zone" onclick="showToast('📷 Beleg-Scanner: nach Supabase Storage verbinden!')">
       <div style="font-size:28px;margin-bottom:6px">📄</div>
-      <div style="font-size:13px;color:var(--muted);font-weight:500">Beleg hochladen</div>
+      <div style="font-size:13px;color:var(--text2);font-weight:500">Beleg hochladen</div>
       <div style="font-size:11px;color:#c4c2d8;margin-top:2px">KI-Auswertung via OpenAI Vision</div>
     </div>
     <button class="btn-primary" onclick="addExpense()">Speichern</button>
@@ -992,8 +992,8 @@ select.input option { background: var(--bg2); color: var(--text); }
     <div class="form-row">
       <label class="form-label">Icon</label>
       <div style="display:flex;gap:10px;align-items:center">
-        <div id="newTripIcon" onclick="pickIcon('newTripIcon')" style="font-size:32px;cursor:pointer;padding:8px;background:var(--brand-light);border-radius:12px;line-height:1">🗺️</div>
-        <span style="font-size:13px;color:var(--muted)">Tippen zum Ändern</span>
+        <div id="newTripIcon" onclick="pickIcon('newTripIcon')" style="font-size:32px;cursor:pointer;padding:8px;background:var(--accent-bg);border-radius:12px;line-height:1">🗺️</div>
+        <span style="font-size:13px;color:var(--text2)">Tippen zum Ändern</span>
       </div>
     </div>
     <button class="btn-primary" onclick="createTrip()" style="margin-top:4px">Trip erstellen</button>
@@ -1082,7 +1082,7 @@ select.input option { background: var(--bg2); color: var(--text); }
         <input class="input" placeholder="Option 2" style="flex:1" />
       </div>
     </div>
-    <button onclick="addPollOption()" style="width:100%;padding:10px;border:2px dashed var(--border);border-radius:12px;background:none;color:var(--brand);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px">+ Option hinzufügen</button>
+    <button onclick="addPollOption()" style="width:100%;padding:10px;border:2px dashed var(--border);border-radius:12px;background:none;color:var(--accent);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px">+ Option hinzufügen</button>
     <button class="btn-primary" onclick="createPoll()" style="margin-top:4px">Abstimmung starten</button>
   </div>
 </div>
@@ -1138,7 +1138,7 @@ function closeModalOutside(e, id) { if (e.target === e.currentTarget) closeModal
 function pickIcon(el, icon) {
   selectedIcon = icon;
   document.querySelectorAll('.icon-pick').forEach(s => s.style.background = '');
-  el.style.background = 'var(--brand-light)';
+  el.style.background = 'var(--accent-bg)';
 }
 
 document.addEventListener('click', function(e) {
@@ -1206,13 +1206,13 @@ async function init() {
 function showAuth() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('authScreen').style.display   = 'flex';
-  document.getElementById('mainApp').style.display      = 'none';
+  document.getElementById('app').style.display          = 'none';
 }
 
 function showApp() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('authScreen').style.display   = 'none';
-  const app = document.getElementById('mainApp');
+  const app = document.getElementById('app');
   app.style.display = 'flex';
   renderHeaderAvatar();
   loadAll();
@@ -1300,7 +1300,7 @@ function renderHeaderAvatar() {
   const wrap = document.getElementById('headerAvatar');
   wrap.innerHTML = '';
   const av = avatarEl(currentProfile, 34);
-  av.style.border = '2px solid var(--brand-light)';
+  av.style.border = '2px solid var(--border2)';
   wrap.appendChild(av);
 }
 
@@ -1310,7 +1310,7 @@ function renderProfileView() {
 
   const av = document.getElementById('profileAvatar');
   av.innerHTML = '';
-  av.style.background = p.color || 'var(--brand)';
+  av.style.background = p.color || 'var(--accent)';
   if (p.avatar_url) {
     const img = document.createElement('img');
     img.src = p.avatar_url;
@@ -1389,7 +1389,7 @@ function renderMembers() {
   const list = document.getElementById('memberList');
   list.innerHTML = '';
   const profiles = Object.values(allProfiles);
-  if (!profiles.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Keine Mitglieder gefunden</div>'; return; }
+  if (!profiles.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Keine Mitglieder gefunden</div>'; return; }
 
   profiles.forEach(p => {
     const row = document.createElement('div');
@@ -1401,13 +1401,13 @@ function renderMembers() {
     info.style.flex = '1';
     info.innerHTML = `
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">${p.display_name || p.email}</div>
-      <div style="font-size:12px;color:var(--muted)">${p.email}</div>`;
+      <div style="font-size:12px;color:var(--text2)">${p.email}</div>`;
     row.appendChild(info);
 
     if (p.id === currentUser.id) {
       const badge = document.createElement('span');
       badge.className = 'tag';
-      badge.style.cssText = 'background:var(--brand-light);color:var(--brand)';
+      badge.style.cssText = 'background:var(--accent-bg);color:var(--accent)';
       badge.textContent = 'Du';
       row.appendChild(badge);
     }
@@ -1450,24 +1450,24 @@ async function loadEvents() {
     const isOpen = openTripIds.has(trip.id);
 
     const tripCard = document.createElement('div');
-    tripCard.style.cssText = 'margin-bottom:12px;border-radius:18px;overflow:hidden;border:1.5px solid var(--border);background:var(--card)';
+    tripCard.style.cssText = 'margin-bottom:12px;border-radius:18px;overflow:hidden;border:1.5px solid var(--border);background:var(--surface)';
 
     // Trip header
     const header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:' + (isOpen ? 'var(--brand-light)' : 'var(--card)') + ';transition:background 0.2s';
+    header.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:' + (isOpen ? 'var(--accent-bg)' : 'var(--surface)') + ';transition:background 0.2s';
     header.onclick = () => toggleTrip(trip.id, tripCard, tripEvents, allExp, statusCls, statusLabel);
     header.innerHTML =
       '<div style="font-size:28px;flex-shrink:0">' + (trip.icon||'🗺️') + '</div>' +
       '<div style="flex:1;min-width:0">' +
         '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + trip.name + '</div>' +
-        '<div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:8px;align-items:center">' +
+        '<div style="font-size:12px;color:var(--text2);margin-top:2px;display:flex;gap:8px;align-items:center">' +
           '<span>' + tripEvents.length + ' Events</span>' +
           (openEvents > 0 ? '<span style="background:#dcfce7;color:#16a34a;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600">' + openEvents + ' offen</span>' : '') +
           '<span class="status-badge ' + statusCls[trip.status||'offen'] + '">' + statusLabel[trip.status||'offen'] + '</span>' +
         '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--brand)">€' + tripTotal.toFixed(2) + '</div>' +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--accent)">€' + tripTotal.toFixed(2) + '</div>' +
         '<div id="chev-' + trip.id + '" style="font-size:18px;transition:transform 0.25s;transform:rotate(' + (isOpen?'180':'0') + 'deg)">▾</div>' +
       '</div>';
 
@@ -1479,7 +1479,7 @@ async function loadEvents() {
     evContainer.style.cssText = 'display:' + (isOpen ? 'block' : 'none') + ';padding:0 10px 10px';
 
     if (tripEvents.length === 0) {
-      evContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Noch keine Events in diesem Trip</div>';
+      evContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Noch keine Events in diesem Trip</div>';
     } else {
       tripEvents.forEach(ev => {
         renderEventCard(ev, allExp, evContainer, statusCls, statusLabel);
@@ -1503,7 +1503,7 @@ async function loadEvents() {
   if (unassigned.length > 0) {
     if (tripList.length > 0) {
       const sep = document.createElement('div');
-      sep.style.cssText = 'font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--muted);margin:8px 0 10px;padding:0 4px;letter-spacing:0.3px';
+      sep.style.cssText = 'font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--text2);margin:8px 0 10px;padding:0 4px;letter-spacing:0.3px';
       sep.textContent = 'Ohne Trip';
       list.appendChild(sep);
     }
@@ -1511,7 +1511,7 @@ async function loadEvents() {
   }
 
   if ((!trips || !trips.length) && (!events || !events.length)) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Noch keine Trips oder Events – fang an! 🍻</div>';
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text2);font-size:14px">Noch keine Trips oder Events – fang an! 🍻</div>';
   }
 }
 async function addNewEvent() {
@@ -1587,7 +1587,7 @@ async function loadExpenses() {
     const av = avatarEl(p, 26);
     cell.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>
-      <div style="font-size:11px;color:var(--muted)">Bezahlt</div>
+      <div style="font-size:11px;color:var(--text2)">Bezahlt</div>
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">€${paid.toFixed(2)}</div>
       <div style="margin-top:3px;font-size:12px;font-weight:600;color:${owes>0?'#f59e0b':'#10b981'}">
         ${owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
@@ -1658,7 +1658,7 @@ async function loadExpenses() {
       topRow.appendChild(label);
       topRow.appendChild(avatarEl(tx.to, 30));
       const amtDiv = document.createElement('div');
-      amtDiv.style.cssText = 'font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--brand);margin-left:6px';
+      amtDiv.style.cssText = 'font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--accent);margin-left:6px';
       amtDiv.textContent = '€' + tx.amount.toFixed(2);
       topRow.appendChild(amtDiv);
       row.appendChild(topRow);
@@ -1712,7 +1712,7 @@ async function loadExpenses() {
         <div style="text-align:right">
           <div style="font-family:Syne,sans-serif;font-weight:800;font-size:16px">€${Number(exp.amount).toFixed(2)}</div>
           <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
-            <button onclick="openEditExpense('${exp.id}','${exp.description.replace(/'/g,"\'")}',${exp.amount},'${exp.category}')" style="background:var(--brand-light);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--brand);cursor:pointer;font-weight:600">✏️</button>
+            <button onclick="openEditExpense('${exp.id}','${exp.description.replace(/'/g,"\'")}',${exp.amount},'${exp.category}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
             <button onclick="deleteExpense('${exp.id}')" style="background:#fef2f2;border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--red);cursor:pointer;font-weight:600">🗑️</button>
           </div>
         </div>
@@ -1723,7 +1723,7 @@ async function loadExpenses() {
       const av = avatarEl(p, 16);
       meta.prepend(av);
       const nm = document.createElement('span');
-      nm.style.cssText = 'font-size:12px;color:var(--muted)';
+      nm.style.cssText = 'font-size:12px;color:var(--text2)';
       nm.textContent = p.display_name || p.email?.split('@')[0] || '?';
       av.after(nm);
     }
@@ -1772,7 +1772,7 @@ async function loadPolls(showArchive = false) {
   if (archiveItems) archiveItems.innerHTML = '';
 
   if (!polls || !polls.length) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung!</div>';
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);font-size:14px">Noch keine Abstimmung!</div>';
     return;
   }
 
@@ -1803,7 +1803,7 @@ async function loadPolls(showArchive = false) {
 
     let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
       '<span class="status-badge ' + (statusMap[pollStatus]?.cls||'') + '">' + (statusMap[pollStatus]?.label||pollStatus) + '</span>' +
-      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span></div>' +
+      '<span style="font-size:12px;color:var(--text2)">' + total + ' Stimme' + (total!==1?'n':'') + '</span></div>' +
       '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;margin-bottom:14px">' + poll.question + '</div>';
 
     options.forEach((opt, oi) => {
@@ -1820,11 +1820,11 @@ async function loadPolls(showArchive = false) {
 
       const clickable = pollStatus === 'offen' ? ('onclick="castVoteEl(this)" data-pid="' + poll.id + '" data-oi="' + oi + '"') : '';
       inner += '<div class="poll-option ' + (winning?'winning':'') + '" ' + clickable + ' style="' + (pollStatus !== 'offen' ? 'cursor:default;opacity:0.8' : '') + '">' +
-        '<div class="poll-fill" style="width:' + pct + '%;background:' + (winning?'var(--brand-light)':'#f5f4fb') + '"></div>' +
+        '<div class="poll-fill" style="width:' + pct + '%;background:' + (winning?'var(--accent-bg)':'#f5f4fb') + '"></div>' +
         '<div class="poll-content">' +
-          '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:14px">' + opt + '</span>' + (voted?'<span style="color:var(--brand)">✓</span>':'') + '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:14px">' + opt + '</span>' + (voted?'<span style="color:var(--accent)">✓</span>':'') + '</div>' +
           '<div style="display:flex;align-items:center;gap:8px"><div style="display:flex;margin-right:2px">' + voterAvatars + '</div>' +
-          '<span style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:' + (winning?'var(--brand)':'var(--muted)') + '">' + pct + '%</span></div>' +
+          '<span style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:' + (winning?'var(--accent)':'var(--text2)') + '">' + pct + '%</span></div>' +
         '</div></div>';
     });
 
@@ -1844,8 +1844,8 @@ function togglePollArchive() {
   const archiveList = document.getElementById('pollArchiveList');
   const btn = document.getElementById('pollArchiveBtn');
   if (archiveList) archiveList.style.display = pollArchiveVisible ? 'block' : 'none';
-  if (btn) btn.style.background = pollArchiveVisible ? 'var(--brand)' : 'var(--brand-light)';
-  if (btn) btn.style.color = pollArchiveVisible ? '#fff' : 'var(--brand)';
+  if (btn) btn.style.background = pollArchiveVisible ? 'var(--accent)' : 'var(--accent-bg)';
+  if (btn) btn.style.color = pollArchiveVisible ? '#fff' : 'var(--accent)';
 }
 
 async function setPollStatus(btn) {
@@ -1973,7 +1973,7 @@ function renderMessages(msgs) {
 
     if (!isMe) {
       const name = document.createElement('div');
-      name.style.cssText = 'font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px;font-weight:600';
+      name.style.cssText = 'font-size:11px;color:var(--text2);padding-left:4px;margin-bottom:3px;font-weight:600';
       name.textContent = p?.display_name || p?.email?.split('@')[0] || '?';
       wrap.appendChild(name);
     }
@@ -2322,8 +2322,8 @@ function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
   const b = document.createElement('div');
   b.id = 'updateBanner';
-  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(91,79,207,0.4)';
-  b.innerHTML = '<span>🆕 Update verfügbar!</span><button onclick="applyUpdate()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;cursor:pointer">Jetzt laden</button>';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(91,79,207,0.4)';
+  b.innerHTML = '<span>🆕 Update verfügbar!</span><button onclick="applyUpdate()" style="background:#fff;color:var(--accent);border:none;border-radius:20px;padding:6px 16px;font-weight:700;cursor:pointer">Jetzt laden</button>';
   document.body.prepend(b);
 }
 
@@ -2365,7 +2365,7 @@ function renderMembers() {
     info.style.flex = '1';
     info.innerHTML =
       '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
-      '<div style="font-size:12px;color:var(--muted)">' + (p.email || '') + '</div>';
+      '<div style="font-size:12px;color:var(--text2)">' + (p.email || '') + '</div>';
     row.appendChild(info);
     const r = roleMap[p.role] || roleMap['anwaerter'];
     const badge = document.createElement('span');
@@ -2385,7 +2385,7 @@ async function loadAdminPanel() {
   if (pendingList) {
     pendingList.innerHTML = '';
     if (!pending || !pending.length) {
-      pendingList.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;background:var(--card);border-radius:14px">Keine Anwärter ✅</div>';
+      pendingList.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:13px;background:var(--surface);border-radius:14px">Keine Anwärter ✅</div>';
     } else {
       pending.forEach(p => {
         const card = document.createElement('div');
@@ -2397,7 +2397,7 @@ async function loadAdminPanel() {
         info.style.flex = '1';
         info.innerHTML =
           '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
-          '<div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+          '<div style="font-size:12px;color:var(--text2)">' + p.email + '</div>';
         card.appendChild(info);
         const btn = document.createElement('button');
         btn.className = 'btn-sm';
@@ -2426,7 +2426,7 @@ async function loadAdminPanel() {
       info.style.flex = '1';
       info.innerHTML =
         '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+        '<div style="font-size:12px;color:var(--text2)">' + p.email + '</div>';
       row.appendChild(info);
       if (p.id === currentUser.id) {
         const badge = document.createElement('span');
@@ -2490,12 +2490,12 @@ function toggleTrip(tripId, tripCard, tripEvents, allExp, statusCls, statusLabel
     openTripIds.delete(tripId);
     if (container) container.style.display = 'none';
     if (chev) chev.style.transform = 'rotate(0deg)';
-    if (header) header.style.background = 'var(--card)';
+    if (header) header.style.background = 'var(--surface)';
   } else {
     openTripIds.add(tripId);
     if (container) container.style.display = 'block';
     if (chev) chev.style.transform = 'rotate(180deg)';
-    if (header) header.style.background = 'var(--brand-light)';
+    if (header) header.style.background = 'var(--accent-bg)';
   }
 }
 
@@ -2517,23 +2517,23 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
   // Edit button always visible for members+
   let editBtn = '';
   if (canWrite()) {
-    editBtn = '<button onclick="editEventById(this)" data-id="' + ev.id + '" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer">✏️ Bearbeiten</button>';
+    editBtn = '<button onclick="editEventById(this)" data-id="' + ev.id + '" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer">✏️ Bearbeiten</button>';
   }
   if (isAdmin()) adminHtml = buildEventAdminBtns(ev.id, st);
 
   card.innerHTML =
     '<div style="display:flex;align-items:center;gap:12px">' +
-      '<div class="emoji-icon" style="background:var(--brand-light)">' + (ev.icon||'🎉') + '</div>' +
+      '<div class="emoji-icon" style="background:var(--accent-bg)">' + (ev.icon||'🎉') + '</div>' +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
           '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:14px">' + ev.name + '</span>' +
           '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
+        '<div style="font-size:11px;color:var(--text2)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
       '</div>' +
       '<div style="text-align:right;flex-shrink:0">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--brand)">€' + evTotal.toFixed(2) + '</div>' +
-        '<div style="font-size:10px;color:var(--muted)">€' + perP.toFixed(2) + '/P</div>' +
+        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--accent)">€' + evTotal.toFixed(2) + '</div>' +
+        '<div style="font-size:10px;color:var(--text2)">€' + perP.toFixed(2) + '/P</div>' +
       '</div>' +
     '</div>' +
     (evTotal > 0 ? '<div class="prog-bar" style="margin-top:8px">' +
@@ -2690,7 +2690,7 @@ async function openEditEvent(ev) {
   if (tripSel) tripSel.value = ev.trip_id || '';
   // Highlight current icon
   document.querySelectorAll('#modalEditEvent .icon-pick').forEach(el => {
-    el.style.background = el.dataset.icon === (ev.icon || '🎉') ? 'var(--brand-light)' : '';
+    el.style.background = el.dataset.icon === (ev.icon || '🎉') ? 'var(--accent-bg)' : '';
   });
   openModal('modalEditEvent');
 }
@@ -2705,7 +2705,7 @@ document.addEventListener('click', e => {
   if (!hiddenId) return;
   document.getElementById(hiddenId).value = el.dataset.icon;
   modal.querySelectorAll('.icon-pick').forEach(i => i.style.background = '');
-  el.style.background = 'var(--brand-light)';
+  el.style.background = 'var(--accent-bg)';
 });
 
 async function saveEditEvent() {
@@ -2736,8 +2736,8 @@ function pickExpCat(btn) {
     b.style.background = 'none';
     b.style.borderColor = 'var(--border)';
   });
-  btn.style.background = 'var(--brand-light)';
-  btn.style.borderColor = 'var(--brand)';
+  btn.style.background = 'var(--accent-bg)';
+  btn.style.borderColor = 'var(--accent)';
   document.getElementById('editExpCat').value = btn.getAttribute('data-cat');
 }
 
@@ -2749,8 +2749,8 @@ function openEditExpense(id, desc, amount, cat) {
   // Highlight correct category button
   document.querySelectorAll('#modalEditExpense .cat-btn').forEach(b => {
     const active = b.getAttribute('data-cat') === cat;
-    b.style.background   = active ? 'var(--brand-light)' : 'none';
-    b.style.borderColor  = active ? 'var(--brand)'       : 'var(--border)';
+    b.style.background   = active ? 'var(--accent-bg)' : 'none';
+    b.style.borderColor  = active ? 'var(--accent)'       : 'var(--border)';
   });
   openModal('modalEditExpense');
 }
