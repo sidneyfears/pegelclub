@@ -115,14 +115,14 @@ img { border-radius: 50%; object-fit: cover; }
    ════════════════════════════════════════════ */
 #authScreen {
   position: fixed; inset: 0; z-index: 500;
-  background: var(--bg);
+  background: #0d0d16;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
 .auth-card {
   width: 100%; max-width: 400px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #1e1e32;
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 24px;
   padding: 32px 28px;
 }
@@ -130,9 +130,9 @@ img { border-radius: 50%; object-fit: cover; }
 .auth-brand {
   font-family: 'Bricolage Grotesque', sans-serif;
   font-weight: 800; font-size: 28px; text-align: center;
-  color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px;
+  color: #f0effe; letter-spacing: -0.5px; margin-bottom: 4px;
 }
-.auth-sub { text-align: center; color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+.auth-sub { text-align: center; color: rgba(240,239,254,0.6); font-size: 14px; margin-bottom: 28px; }
 .auth-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 24px; }
 .auth-tab {
   flex: 1; padding: 8px; border: none; border-radius: 8px;
@@ -427,15 +427,15 @@ img { border-radius: 50%; object-fit: cover; }
    ════════════════════════════════════════════ */
 .input {
   width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border);
+  background: #13131f;
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  font-size: 15px; color: var(--text);
+  font-size: 15px; color: #f0effe;
   outline: none; transition: border-color 0.2s;
 }
-.input:focus { border-color: var(--accent); }
-.input::placeholder { color: var(--text3); }
+.input:focus { border-color: #7c6af7; }
+.input::placeholder { color: rgba(240,239,254,0.35); }
 .form-row { margin-bottom: 16px; }
 .form-label {
   display: block; font-size: 12px; font-weight: 600;
@@ -2493,7 +2493,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.3';
+const APP_VERSION = '2.2.4';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
