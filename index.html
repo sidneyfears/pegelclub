@@ -2382,7 +2382,6 @@ function subscribeRealtime() {
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
       await loadEvents();
-      const activeTab = document.querySelector('.nav-btn.active')?.textContent?.trim();
       if (document.getElementById('view-expenses')?.classList.contains('active')) {
         await loadExpenses();
       }
@@ -3288,10 +3287,18 @@ async function markExpenseSettled(expenseId, debtorId, currentSettled) {
       },
       body: JSON.stringify({ settled: newSettled })
     });
-    if (!res.ok) { showToast('❌ Fehler: ' + await res.text()); return; }
+    if (!res.ok) {
+      const errText = await res.text();
+      if (errText.includes("settled")) {
+        showToast('⚠️ Bitte zuerst SQL ausführen: ALTER TABLE expenses ADD COLUMN settled jsonb DEFAULT '[]'');
+      } else {
+        showToast('❌ Fehler: ' + errText);
+      }
+      return;
+    }
     showToast('✅ Abgerechnet!');
-    await loadExpenses();
-    await loadEvents();
+    // Reload both views so footer updates immediately
+    await Promise.all([loadExpenses(), loadEvents()]);
   } catch(e) {
     showToast('❌ ' + e.message);
   }
