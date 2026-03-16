@@ -1028,7 +1028,7 @@ if (!Promise.allSettled) {
           <div style="margin-bottom:12px;padding:14px;background:var(--card);border-radius:16px;border:1px solid var(--border);text-align:center">
             <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.5px;text-transform:uppercase">App Info</div>
             <div style="font-family:Syne,sans-serif;font-weight:800;font-size:18px;color:var(--brand)">Pegelclub 🍻</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:4px">Version 1.5.0</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Version 1.5.3</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">© 2026 · Made with ❤️</div>
 
           </div>
@@ -1701,7 +1701,7 @@ async function addNewEvent() {
       date: date ? formatDate(date) : '',
       created_by: currentUser.id,
       status: 'offen',
-      trip_id: tripId || null
+      trip_id: (tripId && tripId !== '') ? tripId : null
     });
     const res = await fetch(SUPABASE_URL + '/rest/v1/events', {
       method: 'POST',
@@ -2684,7 +2684,7 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
   // Edit button always visible for members+
   let editBtn = '';
   if (canWrite()) {
-    editBtn = '<button onclick="openEditEvent(' + JSON.stringify(ev).replace(/</g,'\u003c') + ')" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer">✏️ Bearbeiten</button>';
+    editBtn = '<button onclick="editEventById(this)" data-id="' + ev.id + '" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer">✏️ Bearbeiten</button>';
   }
   if (isAdmin()) adminHtml = buildEventAdminBtns(ev.id, st);
 
@@ -2839,6 +2839,13 @@ async function populateTripDropdowns() {
 // ════════════════════════════════════════════════
 // EDIT EVENT
 // ════════════════════════════════════════════════
+async function editEventById(btn) {
+  const id = btn.getAttribute('data-id');
+  const { data: ev } = await sb.from('events').select('*').eq('id', id).single();
+  if (!ev) { showToast('Event nicht gefunden'); return; }
+  openEditEvent(ev);
+}
+
 async function openEditEvent(ev) {
   await populateTripDropdowns();
   document.getElementById('editEventId').value   = ev.id;
@@ -2879,7 +2886,7 @@ async function saveEditEvent() {
   const res = await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + id, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ name, date: date ? formatDate(date) : '', icon, trip_id: tripId || null })
+    body: JSON.stringify({ name, date: date ? formatDate(date) : '', icon, trip_id: (tripId && tripId !== '') ? tripId : null })
   });
   if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
   closeModal('modalEditEvent');
