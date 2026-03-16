@@ -2326,15 +2326,14 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // ════════════════════════════════════════════════
 // START
 // ════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  try {
-    init();
-  } catch(e) {
-    console.error('Init error:', e);
-    const ls = document.getElementById('loadingScreen');
-    if (ls) ls.innerHTML = '<div style="color:red;padding:20px;font-size:14px">Fehler: ' + e.message + '</div>';
-  }
-});
+// Script runs at end of body - DOM is already ready
+try {
+  init();
+} catch(e) {
+  console.error('Init crash:', e);
+  const ls = document.getElementById('loadingScreen');
+  if (ls) ls.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center">⚠️ ' + e.message + '</div>';
+}
 
 // ════════════════════════════════════════════════
 // ONESIGNAL PUSH
@@ -2521,7 +2520,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.1.3';
+const APP_VERSION = '2.1.4';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
