@@ -1620,8 +1620,9 @@ async function loadEvents() {
   const list = document.getElementById('eventList');
   list.innerHTML = '';
 
-  const statusCls   = { offen:'status-offen', geschlossen:'status-geschlossen', archiviert:'status-archiviert' };
-  const statusLabel = { offen:'🟢 Offen', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
+  const statusCls        = { offen:'status-offen', geschlossen:'status-geschlossen', archiviert:'status-archiviert' };
+  const statusLabel      = { offen:'🟢 Offen', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
+  const eventStatusLabel = { offen:'🟢 Offen', geschlossen:'💰 Bezahlt', archiviert:'📦 Archiviert' };
 
   let hasContent = false;
 
@@ -1676,7 +1677,7 @@ async function loadEvents() {
     if (tripEvents.length === 0) {
       evContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">Noch keine Events in diesem Trip</div>';
     } else {
-      tripEvents.forEach(ev => renderEventCard(ev, allExp, evContainer, statusCls, statusLabel));
+      tripEvents.forEach(ev => renderEventCard(ev, allExp, evContainer, statusCls, eventStatusLabel));
     }
 
     // ── Payment summary footer ──
@@ -1753,7 +1754,7 @@ async function loadEvents() {
       sep.textContent = 'Einzelne Events';
       list.appendChild(sep);
     }
-    unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, statusLabel));
+    unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, eventStatusLabel));
   }
 
   // ── 3. Unlinked Expenses (no event_id, no trip_id) ──
@@ -2969,7 +2970,7 @@ function buildTripAdminBtns(id, status) {
 function buildEventAdminBtns(id, status) {
   var btns = '<div class="admin-actions" onclick="event.stopPropagation()">';
   if (status !== 'offen')       btns += '<button class="admin-action-btn success" onclick="setEventStatus(this)" data-id="' + id + '" data-status="offen">🟢 Öffnen</button>';
-  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setEventStatus(this)" data-id="' + id + '" data-status="geschlossen">🔒 Schließen</button>';
+  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setEventStatus(this)" data-id="' + id + '" data-status="geschlossen">💰 Bezahlen</button>';
   if (status !== 'archiviert')  btns += '<button class="admin-action-btn" onclick="setEventStatus(this)" data-id="' + id + '" data-status="archiviert">📦 Archivieren</button>';
   btns += '<button class="admin-action-btn danger" onclick="deleteEventById(this)" data-id="' + id + '">🗑️ Löschen</button>';
   btns += '</div>';
@@ -3034,7 +3035,7 @@ async function setEventStatus(btn) {
     body: JSON.stringify({ status })
   });
   await loadEvents();
-  showToast({ offen:'🟢 Geöffnet', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' }[status] || status);
+  showToast({ offen:'🟢 Geöffnet', geschlossen:'💰 Bezahlt', archiviert:'📦 Archiviert' }[status] || status);
 }
 
 async function deleteEventById(btn) {
@@ -4058,8 +4059,9 @@ async function loadArchivedTripsEvents() {
     return;
   }
 
-  const statusCls   = { offen:'status-offen', geschlossen:'status-geschlossen', archiviert:'status-archiviert' };
-  const statusLabel = { offen:'🟢 Offen', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
+  const statusCls        = { offen:'status-offen', geschlossen:'status-geschlossen', archiviert:'status-archiviert' };
+  const statusLabel      = { offen:'🟢 Offen', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
+  const eventStatusLabel = { offen:'🟢 Offen', geschlossen:'💰 Bezahlt', archiviert:'📦 Archiviert' };
 
   // Archived trips
   (trips || []).forEach(trip => {
