@@ -1301,7 +1301,10 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openModal(id)  {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modalNewEvent' || id === 'modalEditEvent') populateTripDropdowns();
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeModalOutside(e, id) { if (e.target === e.currentTarget) closeModal(id); }
 
@@ -2816,7 +2819,7 @@ function checkPermission() {
 // TRIP DROPDOWN POPULATION
 // ════════════════════════════════════════════════
 async function populateTripDropdowns() {
-  const { data: trips } = await sb.from('trips').select('id,name,icon').eq('status', 'offen').order('created_at', { ascending: false });
+  const { data: trips } = await sb.from('trips').select('id,name,icon').neq('status', 'archiviert').order('created_at', { ascending: false });
   const selectors = ['newEventTrip', 'editEventTrip'];
   selectors.forEach(id => {
     const sel = document.getElementById(id);
