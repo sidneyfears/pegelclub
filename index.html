@@ -1907,8 +1907,6 @@ async function addExpense() {
 
   if (!desc)          { showToast('Beschreibung fehlt'); return; }
   if (!amount || amount <= 0) { showToast('Betrag ungueltig'); return; }
-  if (!currentEventId){ showToast('Kein Event ausgewaehlt'); return; }
-
   try {
     const { data: { session } } = await sb.auth.getSession();
     const token = session.access_token;
@@ -1921,10 +1919,12 @@ async function addExpense() {
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        event_id: document.getElementById('expEvent')?.value || currentEventId || null,
-        trip_id:  document.getElementById('expTrip')?.value  || null,
+        event_id: (document.getElementById('expEvent')?.value || currentEventId) || null,
+        trip_id:  document.getElementById('expTrip')?.value || null,
         user_id:  currentUser.id,
-        amount, description: desc, category: cat
+        amount:   amount,
+        description: desc,
+        category: cat
       })
     });
     if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
@@ -2496,7 +2496,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.6';
+const APP_VERSION = '2.2.7';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
