@@ -1298,15 +1298,21 @@ async function init() {
 }
 
 function showAuth() {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('authScreen').style.display   = 'flex';
-  document.getElementById('app').style.display          = 'none';
+  const ls = document.getElementById('loadingScreen');
+  const as = document.getElementById('authScreen');
+  const ap = document.getElementById('app');
+  if (ls) ls.style.display = 'none';
+  if (as) as.style.display = 'flex';
+  if (ap) ap.style.display = 'none';
 }
 
 function showApp() {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('authScreen').style.display   = 'none';
-  document.getElementById('app').style.display = 'flex';
+  const ls = document.getElementById('loadingScreen');
+  const as = document.getElementById('authScreen');
+  const ap = document.getElementById('app');
+  if (ls) ls.style.display = 'none';
+  if (as) as.style.display = 'none';
+  if (ap) ap.style.display = 'flex';
   renderHeaderAvatar();
   renderProfileView();
   loadAll();
@@ -2261,13 +2267,21 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // START
 // ════════════════════════════════════════════════
 // Script runs at end of body - DOM is already ready
-try {
-  init();
-} catch(e) {
-  console.error('Init crash:', e);
-  const ls = document.getElementById('loadingScreen');
-  if (ls) ls.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center">⚠️ ' + e.message + '</div>';
+function safeInit() {
+  if (typeof supabase === 'undefined') {
+    // Supabase not loaded yet, retry
+    setTimeout(safeInit, 100);
+    return;
+  }
+  try {
+    init();
+  } catch(e) {
+    console.error('Init crash:', e);
+    const ls = document.getElementById('loadingScreen');
+    if (ls) ls.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center">⚠️ ' + e.message + '<br><small>' + e.stack + '</small></div>';
+  }
 }
+safeInit();
 
 // ════════════════════════════════════════════════
 // ONESIGNAL PUSH
@@ -2454,7 +2468,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
