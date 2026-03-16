@@ -3290,7 +3290,7 @@ async function markExpenseSettled(expenseId, debtorId, currentSettled) {
     if (!res.ok) {
       const errText = await res.text();
       if (errText.includes("settled")) {
-        showToast('⚠️ Bitte zuerst SQL ausführen: ALTER TABLE expenses ADD COLUMN settled jsonb DEFAULT '[]'');
+        showToast("⚠️ SQL fehlt: ALTER TABLE expenses ADD COLUMN settled jsonb DEFAULT '[]'::jsonb");
       } else {
         showToast('❌ Fehler: ' + errText);
       }
