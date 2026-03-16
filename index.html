@@ -2245,29 +2245,55 @@ function switchTab(tab, btn) {
 // PAYMENTS
 // ════════════════════════════════════════════════
 async function loadPayments(eventId) {
-  const { data } = await sb.from('payments')
-    .select('*').eq('event_id', eventId);
+  let query = sb.from('payments').select('*');
+  if (eventId) {
+    query = query.eq('event_id', eventId);
+  }
+  const { data } = await query;
   return data || [];
 }
 
 async function markSettled(eventId, debtorId, creditorId, existing) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (existing) {
-    await fetch(SUPABASE_URL + '/rest/v1/payments?id=eq.' + existing.id, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ creditor_confirmed: true, debtor_confirmed: true })
-    });
-  } else {
-    await fetch(SUPABASE_URL + '/rest/v1/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ event_id: eventId, debtor_id: debtorId, creditor_id: creditorId, debtor_confirmed: true, creditor_confirmed: true })
-    });
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+
+    // Re-check for existing payment in DB (in case it was not passed in)
+    let existingRecord = existing;
+    if (!existingRecord) {
+      let checkQuery = sb.from('payments')
+        .select('*')
+        .eq('debtor_id', debtorId)
+        .eq('creditor_id', creditorId);
+      if (eventId) checkQuery = checkQuery.eq('event_id', eventId);
+      const { data: found } = await checkQuery.maybeSingle();
+      existingRecord = found;
+    }
+
+    if (existingRecord) {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/payments?id=eq.' + existingRecord.id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ creditor_confirmed: true, debtor_confirmed: true })
+      });
+      if (!res.ok) { showToast('❌ Fehler: ' + await res.text()); return; }
+    } else {
+      // Only include event_id if it exists (payments table may require it or not)
+      const body = { debtor_id: debtorId, creditor_id: creditorId, debtor_confirmed: true, creditor_confirmed: true };
+      if (eventId) body.event_id = eventId;
+      const res = await fetch(SUPABASE_URL + '/rest/v1/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) { showToast('❌ Fehler: ' + await res.text()); return; }
+    }
+
+    showToast('✅ Abgerechnet!');
+    setTimeout(() => loadExpenses(), 300);
+  } catch(e) {
+    showToast('❌ ' + e.message);
+    console.error('markSettled error:', e);
   }
-  showToast('✅ Abgerechnet!');
-  // Small delay to avoid race condition with realtime listener
-  setTimeout(() => loadExpenses(), 300);
 }
 
 async function confirmPayment(eventId, debtorId, creditorId, role) {
