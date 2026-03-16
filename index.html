@@ -1728,7 +1728,9 @@ async function loadExpenses() {
   if (!currentEventId) return;
   const myRender = ++_expensesRenderCount;
   
-  const { data: expenses } = await sb.from('expenses').select('*').eq('event_id', currentEventId);
+  const { data: expenses } = await sb.from('expenses').select('*')
+    .or(`event_id.eq.${currentEventId},and(event_id.is.null,trip_id.eq.${currentTripContext || '00000000-0000-0000-0000-000000000000'})`)
+    .order('created_at', { ascending: false });
   const allExp = expenses || [];
   const memberCount = Object.keys(allProfiles).length || 1;
   const total = allExp.reduce((s, x) => s + Number(x.amount), 0);
@@ -1919,7 +1921,7 @@ async function addExpense() {
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        event_id: (document.getElementById('expEvent')?.value || currentEventId) || null,
+        event_id: document.getElementById('expEvent')?.value || currentEventId || null,
         trip_id:  document.getElementById('expTrip')?.value || null,
         user_id:  currentUser.id,
         amount:   amount,
@@ -2496,7 +2498,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.8';
+const APP_VERSION = '2.2.9';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
