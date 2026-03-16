@@ -591,11 +591,14 @@ if (!Promise.allSettled) {
     .msg-row.me { flex-direction: row-reverse; }
 
     .bubble {
-      max-width: 72%;
+      max-width: 75%;
+      min-width: 48px;
       padding: 10px 14px;
-      font-size: 14px;
-      line-height: 1.45;
+      font-size: 15px;
+      line-height: 1.5;
       word-break: break-word;
+      overflow-wrap: break-word;
+      hyphens: none;
     }
 
     .bubble.them {
@@ -997,6 +1000,10 @@ if (!Promise.allSettled) {
           <input type="file" id="avatarFileInput" accept="image/*" onchange="uploadAvatar(event)" />
           <div class="profile-name" id="profileName">–</div>
           <div class="profile-email" id="profileEmail">–</div>
+          <div id="profileRoleBadge" style="margin-top:6px"></div>
+          <div id="anwaerterNotice" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:13px;color:#92400e;text-align:center">
+            ⏳ Dein Account wartet auf Freischaltung durch einen Admin.
+          </div>
 
           <div class="profile-stat-row" id="profileStats"></div>
 
@@ -1018,23 +1025,29 @@ if (!Promise.allSettled) {
             <div style="font-family:Syne,sans-serif;font-weight:800;font-size:18px;color:var(--brand)">Pegelclub 🍻</div>
             <div style="font-size:12px;color:var(--muted);margin-top:4px">Version 1.5.0</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">© 2026 · Made with ❤️</div>
-            <div style="display:flex;justify-content:center;gap:16px;margin-top:10px">
-              <div style="text-align:center">
-                <div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--brand)" id="versionMembers">-</div>
-                <div style="font-size:10px;color:var(--muted)">Mitglieder</div>
-              </div>
-              <div style="text-align:center">
-                <div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--brand)" id="versionEvents">-</div>
-                <div style="font-size:10px;color:var(--muted)">Events</div>
-              </div>
-              <div style="text-align:center">
-                <div style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--brand)" id="versionExpenses">-</div>
-                <div style="font-size:10px;color:var(--muted)">Ausgaben</div>
-              </div>
-            </div>
+
           </div>
           <button class="btn-danger" onclick="handleLogout()">🚪 Abmelden</button>
         </div>
+      </div>
+
+      <!-- MEMBERS VIEW -->
+      <div class="view" id="view-members">
+        <div class="section-header">
+          <div class="section-title">Mitglieder 👥</div>
+        </div>
+        <div id="memberList"></div>
+      </div>
+
+      <!-- ADMIN VIEW -->
+      <div class="view" id="view-admin">
+        <div class="section-header">
+          <div class="section-title">Admin ⚙️</div>
+        </div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--muted);letter-spacing:0.5px;margin-bottom:10px">ANWÄRTER</div>
+        <div id="pendingList" style="margin-bottom:20px"></div>
+        <div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--muted);letter-spacing:0.5px;margin-bottom:10px">ALLE MITGLIEDER</div>
+        <div id="adminMemberList"></div>
       </div>
 
     </div>
@@ -1074,6 +1087,14 @@ if (!Promise.allSettled) {
       <button class="nav-btn" onclick="switchTab('chat',this)">
         <span class="nav-icon">💬</span>
         <span class="nav-label">Chat</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('members',this)">
+        <span class="nav-icon">👥</span>
+        <span class="nav-label">Mitglieder</span>
+      </button>
+      <button class="nav-btn" id="adminNavBtn" onclick="switchTab('admin',this)" style="display:none">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Admin</span>
       </button>
       <button class="nav-btn" onclick="switchTab('profile',this)">
         <span class="nav-icon">👤</span>
@@ -1144,6 +1165,30 @@ if (!Promise.allSettled) {
       <div style="font-size:11px;color:#c4c2d8;margin-top:2px">KI-Auswertung via OpenAI Vision</div>
     </div>
     <button class="btn-primary" onclick="addExpense()">Speichern</button>
+  </div>
+</div>
+
+<!-- NEW TRIP -->
+<div class="modal-overlay" id="modalNewTrip" onclick="closeModalOutside(event,'modalNewTrip')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Neuer Trip 🗺️</div>
+    <div class="form-row">
+      <label class="form-label">Name</label>
+      <input class="input" id="newTripName" placeholder="z.B. Amsterdam 2026" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Datum</label>
+      <input class="input" id="newTripDate" type="date" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Icon</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div id="newTripIcon" onclick="pickIcon('newTripIcon')" style="font-size:32px;cursor:pointer;padding:8px;background:var(--brand-light);border-radius:12px;line-height:1">🗺️</div>
+        <span style="font-size:13px;color:var(--muted)">Tippen zum Ändern</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="createTrip()" style="margin-top:4px">Trip erstellen</button>
   </div>
 </div>
 
@@ -1934,31 +1979,52 @@ async function loadChat() {
 function renderMessages(msgs) {
   const el = document.getElementById('chatMessages');
   el.innerHTML = '';
-
-  msgs.forEach((msg, i) => {
+  msgs.forEach((msg) => {
     const isMe = msg.user_id === currentUser.id;
     const p    = allProfiles[msg.user_id];
-    const time = new Date(msg.created_at).toLocaleTimeString('de', { hour:'2-digit', minute:'2-digit' });
+    const time = new Date(msg.created_at).toLocaleTimeString('de', { hour: '2-digit', minute: '2-digit' });
 
     const row = document.createElement('div');
-    row.className = `msg-row ${isMe ? 'me' : ''}`;
+    row.className = 'msg-row' + (isMe ? ' me' : '');
 
     if (!isMe) {
       const av = avatarEl(p, 30);
+      av.style.flexShrink = '0';
       row.appendChild(av);
     }
 
     const wrap = document.createElement('div');
-    wrap.innerHTML = `
-      ${!isMe ? `<div style="font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px">${p?.display_name || p?.email?.split('@')[0] || '?'}</div>` : ''}
-      <div class="bubble ${isMe?'me':'them'}">${msg.text}</div>
-      <div class="msg-meta" style="text-align:${isMe?'right':'left'};padding:0 4px">${time}</div>`;
+    wrap.style.cssText = 'display:flex;flex-direction:column;max-width:75%;' + (isMe ? 'align-items:flex-end' : 'align-items:flex-start');
+
+    if (!isMe) {
+      const name = document.createElement('div');
+      name.style.cssText = 'font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px;font-weight:600';
+      name.textContent = p?.display_name || p?.email?.split('@')[0] || '?';
+      wrap.appendChild(name);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + (isMe ? 'me' : 'them');
+    // Support HTML images in messages
+    if (msg.text && msg.text.startsWith('<img')) {
+      bubble.innerHTML = msg.text;
+    } else {
+      bubble.textContent = msg.text || '';
+    }
+    wrap.appendChild(bubble);
+
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+    meta.style.cssText = 'text-align:' + (isMe ? 'right' : 'left') + ';padding:0 4px';
+    meta.textContent = time;
+    wrap.appendChild(meta);
+
     row.appendChild(wrap);
     el.appendChild(row);
   });
-
   el.scrollTop = el.scrollHeight;
 }
+
 
 async function sendMessage() {
   const input = document.getElementById('chatInput');
@@ -2026,6 +2092,8 @@ function switchTab(tab, btn) {
     document.getElementById('headerTitle').textContent = titles[tab] || 'Pegelclub';
 
     if (tab === 'polls')   loadPolls();
+    if (tab === 'members') renderMembers();
+    if (tab === 'admin')   loadAdminPanel();
     if (tab === 'members') renderMembers();
     if (tab === 'profile') renderProfileView();
     if (tab === 'expenses' && currentEventId) loadExpenses();
@@ -2290,6 +2358,141 @@ function showUpdateBanner() {
 }
 
 // ════════════════════════════════════════════════
+// ROLES & ADMIN
+// ════════════════════════════════════════════════
+function renderMembers() {
+  const list = document.getElementById('memberList');
+  if (!list) return;
+  list.innerHTML = '';
+  const roleMap = {
+    anwaerter: { label: '⏳ Anwärter', cls: 'role-anwaerter' },
+    mitglied:  { label: '✅ Mitglied',  cls: 'role-mitglied'  },
+    admin:     { label: '⭐ Admin',     cls: 'role-admin'     },
+  };
+  Object.values(allProfiles).forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+    const av = avatarEl(p, 44);
+    row.appendChild(av);
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.innerHTML =
+      '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
+      '<div style="font-size:12px;color:var(--muted)">' + (p.email || '') + '</div>';
+    row.appendChild(info);
+    const r = roleMap[p.role] || roleMap['anwaerter'];
+    const badge = document.createElement('span');
+    badge.className = 'role-badge ' + r.cls;
+    badge.textContent = r.label;
+    row.appendChild(badge);
+    list.appendChild(row);
+  });
+}
+
+async function loadAdminPanel() {
+  if (!isAdmin()) return;
+
+  // Pending members
+  const { data: pending } = await sb.from('profiles').select('*').eq('role', 'anwaerter');
+  const pendingList = document.getElementById('pendingList');
+  if (pendingList) {
+    pendingList.innerHTML = '';
+    if (!pending || !pending.length) {
+      pendingList.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;background:var(--card);border-radius:14px">Keine Anwärter ✅</div>';
+    } else {
+      pending.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:10px';
+        const av = avatarEl(p, 44);
+        card.appendChild(av);
+        const info = document.createElement('div');
+        info.style.flex = '1';
+        info.innerHTML =
+          '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
+          '<div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+        card.appendChild(info);
+        const btn = document.createElement('button');
+        btn.className = 'btn-sm';
+        btn.style.background = 'var(--green)';
+        btn.style.color = '#fff';
+        btn.textContent = '✅ Freischalten';
+        btn.onclick = () => changeRole(p.id, 'mitglied');
+        card.appendChild(btn);
+        pendingList.appendChild(card);
+      });
+    }
+  }
+
+  // All members
+  const { data: allP } = await sb.from('profiles').select('*').order('created_at');
+  const adminList = document.getElementById('adminMemberList');
+  if (adminList) {
+    adminList.innerHTML = '';
+    (allP || []).forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'card';
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:10px';
+      const av = avatarEl(p, 40);
+      row.appendChild(av);
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      info.innerHTML =
+        '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email?.split('@')[0] || '?') + '</div>' +
+        '<div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
+      row.appendChild(info);
+      if (p.id === currentUser.id) {
+        const badge = document.createElement('span');
+        badge.className = 'role-badge role-admin';
+        badge.textContent = '⭐ Du';
+        row.appendChild(badge);
+      } else {
+        const sel = document.createElement('select');
+        sel.className = 'role-select';
+        sel.innerHTML =
+          '<option value="anwaerter"' + (p.role==='anwaerter'?' selected':'') + '>⏳ Anwärter</option>' +
+          '<option value="mitglied"'  + (p.role==='mitglied' ?' selected':'') + '>✅ Mitglied</option>' +
+          '<option value="admin"'     + (p.role==='admin'    ?' selected':'') + '>⭐ Admin</option>';
+        sel.onchange = e => changeRole(p.id, e.target.value);
+        row.appendChild(sel);
+        const delBtn = document.createElement('button');
+        delBtn.style.cssText = 'margin-left:6px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;font-weight:600';
+        delBtn.textContent = '🗑️';
+        delBtn.onclick = () => deleteUser(p.id, p.display_name || p.email);
+        row.appendChild(delBtn);
+      }
+      adminList.appendChild(row);
+    });
+  }
+}
+
+async function changeRole(userId, newRole) {
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ role: newRole })
+  });
+  await loadAllProfiles();
+  await loadAdminPanel();
+  const labels = { anwaerter:'⏳ Anwärter', mitglied:'✅ Mitglied', admin:'⭐ Admin' };
+  showToast('Rolle geändert: ' + (labels[newRole] || newRole));
+}
+
+async function deleteUser(userId, name) {
+  if (!confirm('Nutzer "' + name + '" wirklich löschen?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadAllProfiles();
+  await loadAdminPanel();
+  showToast('🗑️ Nutzer entfernt');
+}
+
+
+// ════════════════════════════════════════════════
 // TRIP & EVENT RENDERING
 // ════════════════════════════════════════════════
 function toggleTrip(tripId, tripCard, tripEvents, allExp, statusCls, statusLabel) {
@@ -2374,11 +2577,11 @@ function buildEventAdminBtns(id, status) {
 }
 
 async function createTrip() {
-  if (!isAdmin()) { showToast('Nur Admins können Trips erstellen'); return; }
   const name = document.getElementById('newTripName').value.trim();
   const date = document.getElementById('newTripDate').value;
   if (!name) { showToast('Name eingeben!'); return; }
-  const tripIcon = document.getElementById('newTripIcon').textContent || '🗺️';
+  const tripIconEl = document.getElementById('newTripIcon');
+  const tripIcon = (tripIconEl?.textContent || '🗺️').trim().replace(/\s/g, '') || '🗺️';
   try {
     const { data: { session } } = await sb.auth.getSession();
     const res = await fetch(SUPABASE_URL + '/rest/v1/trips', {
