@@ -1639,12 +1639,11 @@ function openExpenses(eventId, title) {
   switchTab('expenses', expBtn);
 }
 
-let _loadingExpenses = false;
+let _expensesRenderCount = 0;
 async function loadExpenses() {
   if (!currentEventId) return;
-  if (_loadingExpenses) return;
-  _loadingExpenses = true;
-  try {
+  const myRender = ++_expensesRenderCount;
+  
   const { data: expenses } = await sb.from('expenses').select('*').eq('event_id', currentEventId);
   const allExp = expenses || [];
   const memberCount = Object.keys(allProfiles).length || 1;
@@ -1654,22 +1653,28 @@ async function loadExpenses() {
   document.getElementById('expTotal').textContent     = '€' + total.toFixed(2);
   document.getElementById('expPerPerson').textContent = '€' + perP.toFixed(2);
 
+  // Load payments for split grid
+  const paymentsForGrid = await loadPayments(currentEventId);
+
   // Split grid
   const grid = document.getElementById('splitGrid');
   grid.innerHTML = '';
   Object.values(allProfiles).forEach(p => {
     const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
     const owes = perP - paid;
+    const isSettled = paymentsForGrid.some(pay =>
+      pay.debtor_id === p.id && pay.creditor_confirmed === true
+    );
     const cell = document.createElement('div');
     cell.className = 'split-cell';
-    cell.style.cssText = `background:${owes>0?'#fff7ed':'#f0fdf4'};border:1px solid ${owes>0?'#fed7aa':'#bbf7d0'}`;
+    cell.style.cssText = `background:${isSettled?'var(--surface)':owes>0?'#fff7ed':'#f0fdf4'};border:1px solid ${isSettled?'var(--border)':owes>0?'#fed7aa':'#bbf7d0'}`;
     const av = avatarEl(p, 26);
     cell.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>
       <div style="font-size:11px;color:var(--text2)">Bezahlt</div>
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">€${paid.toFixed(2)}</div>
-      <div style="margin-top:3px;font-size:12px;font-weight:600;color:${owes>0?'#f59e0b':'#10b981'}">
-        ${owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
+      <div style="margin-top:3px;font-size:12px;font-weight:600;color:${isSettled?'var(--green)':owes>0?'#f59e0b':'#10b981'}">
+        ${isSettled?'✅ Ausgeglichen':Math.abs(owes)<0.01?'✅ Ausgeglichen':owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
       </div>`;
     cell.querySelector('div').prepend(av);
     const nameSpan = document.createElement('span');
@@ -1680,6 +1685,9 @@ async function loadExpenses() {
   });
 
   // Settle
+  // Abort if a newer call has started
+  if (myRender !== _expensesRenderCount) return;
+
   const settle = document.getElementById('settleList');
   settle.innerHTML = '';
 
@@ -1806,9 +1814,6 @@ async function loadExpenses() {
     }
     list.appendChild(div);
   });
-  } finally {
-    _loadingExpenses = false;
-  }
 }
 
 async function addExpense() {
