@@ -1048,6 +1048,18 @@ select.input option { background: var(--bg2); color: var(--text); }
       </div>
       <input type="hidden" id="editExpCat" value="food" />
     </div>
+    <div class="form-row">
+      <label class="form-label">Trip (optional)</label>
+      <select class="input" id="editExpTrip" onchange="populateEditExpenseEvents()">
+        <option value="">Kein Trip</option>
+      </select>
+    </div>
+    <div class="form-row" id="editExpEventRow">
+      <label class="form-label">Event (optional)</label>
+      <select class="input" id="editExpEvent">
+        <option value="">Kein Event</option>
+      </select>
+    </div>
     <button class="btn-primary" onclick="saveEditExpense()" style="margin-top:6px">Speichern</button>
   </div>
 </div>
@@ -1869,7 +1881,7 @@ async function loadExpenses() {
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:var(--accent)">€${Number(exp.amount).toFixed(2)}</div>
           <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
-            <button onclick="openEditExpense('${exp.id}','${(exp.description||'').replace(/'/g,"\'")}',${exp.amount},'${exp.category}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
+            <button onclick="openEditExpense('${exp.id}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
             <button onclick="deleteExpense('${exp.id}')" style="background:var(--red-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--red);cursor:pointer;font-weight:600">🗑️</button>
           </div>
         </div>
@@ -2936,6 +2948,53 @@ async function saveEditEvent() {
 // ════════════════════════════════════════════════
 // EXPENSE EDIT & DELETE
 // ════════════════════════════════════════════════
+
+async function populateEditExpenseTrips() {
+  const { data: trips } = await sb.from('trips').select('id,name,icon').neq('status','archiviert').order('created_at', { ascending: false });
+  const sel = document.getElementById('editExpTrip');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Kein Trip</option>';
+  (trips || []).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = (t.icon || '🗺️') + ' ' + t.name;
+    if (t.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function populateEditExpenseEvents() {
+  const tripId = document.getElementById('editExpTrip')?.value || null;
+  const sel = document.getElementById('editExpEvent');
+  const row = document.getElementById('editExpEventRow');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Kein Event</option>';
+  if (tripId && tripId !== '') {
+    const { data: events } = await sb.from('events').select('id,name,icon').eq('trip_id', tripId).neq('status','archiviert').order('created_at', { ascending: false });
+    (events || []).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = (e.icon || '🎉') + ' ' + e.name;
+      if (e.id === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (row) row.style.display = '';
+  } else {
+    // No trip selected – show all events
+    const { data: events } = await sb.from('events').select('id,name,icon').neq('status','archiviert').order('created_at', { ascending: false });
+    (events || []).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = (e.icon || '🎉') + ' ' + e.name;
+      if (e.id === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    if (row) row.style.display = '';
+  }
+}
+
 function pickExpCat(btn) {
   document.querySelectorAll('#modalEditExpense .cat-btn').forEach(b => {
     b.style.background = 'none';
@@ -2953,15 +3012,34 @@ function pickExpCat(btn) {
 // ════════════════════════════════════════════════
 // EDIT & DELETE EXPENSE
 // ════════════════════════════════════════════════
-function openEditExpense(id, desc, amount, cat) {
-  document.getElementById('editExpenseId').value = id;
-  document.getElementById('editExpDesc').value   = desc;
-  document.getElementById('editExpAmount').value = amount;
-  document.getElementById('editExpCat').value    = cat;
+async function openEditExpense(id) {
+  // Load full expense from DB to get event_id and trip_id
+  const { data: exp } = await sb.from('expenses').select('*').eq('id', id).single();
+  if (!exp) { showToast('Ausgabe nicht gefunden'); return; }
+
+  document.getElementById('editExpenseId').value = exp.id;
+  document.getElementById('editExpDesc').value   = exp.description || '';
+  document.getElementById('editExpAmount').value = exp.amount || '';
+  document.getElementById('editExpCat').value    = exp.category || 'food';
+
   // Highlight active category
   document.querySelectorAll('#modalEditExpense .cat-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === cat);
+    const isActive = btn.dataset.cat === (exp.category || 'food');
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? 'var(--accent-bg)' : 'none';
+    btn.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
   });
+
+  // Populate trip dropdown, then set values
+  await populateEditExpenseTrips();
+  const tripSel = document.getElementById('editExpTrip');
+  if (tripSel) tripSel.value = exp.trip_id || '';
+
+  // Populate event dropdown based on selected trip
+  await populateEditExpenseEvents();
+  const eventSel = document.getElementById('editExpEvent');
+  if (eventSel) eventSel.value = exp.event_id || '';
+
   openModal('modalEditExpense');
 }
 
@@ -2972,17 +3050,27 @@ function pickCatEdit(btn) {
 }
 
 async function saveEditExpense() {
-  const id     = document.getElementById('editExpenseId').value;
-  const desc   = document.getElementById('editExpDesc').value.trim();
-  const amount = parseFloat(document.getElementById('editExpAmount').value);
-  const cat    = document.getElementById('editExpCat').value;
-  if (!desc)             { showToast('Beschreibung fehlt'); return; }
+  const id      = document.getElementById('editExpenseId').value;
+  const desc    = document.getElementById('editExpDesc').value.trim();
+  const amount  = parseFloat(document.getElementById('editExpAmount').value);
+  const cat     = document.getElementById('editExpCat').value;
+  const tripId  = document.getElementById('editExpTrip')?.value || null;
+  const eventId = document.getElementById('editExpEvent')?.value || null;
+
+  if (!desc)                  { showToast('Beschreibung fehlt'); return; }
   if (!amount || amount <= 0) { showToast('Betrag ungültig'); return; }
+
   const { data: { session } } = await sb.auth.getSession();
   const res = await fetch(SUPABASE_URL + '/rest/v1/expenses?id=eq.' + id, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ description: desc, amount, category: cat })
+    body: JSON.stringify({
+      description: desc,
+      amount,
+      category: cat,
+      trip_id:  (tripId  && tripId  !== '') ? tripId  : null,
+      event_id: (eventId && eventId !== '') ? eventId : null
+    })
   });
   if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
   closeModal('modalEditExpense');
