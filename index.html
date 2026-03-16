@@ -1138,6 +1138,12 @@ if (!Promise.allSettled) {
       </div>
       <input type="hidden" id="newEventIcon" value="🎉" />
     </div>
+    <div class="form-row">
+      <label class="form-label">Trip (optional)</label>
+      <select class="input" id="newEventTrip">
+        <option value="">Kein Trip</option>
+      </select>
+    </div>
     <button class="btn-primary" onclick="addNewEvent()" style="margin-top:6px">Event erstellen</button>
   </div>
 </div>
@@ -1194,6 +1200,43 @@ if (!Promise.allSettled) {
       </div>
     </div>
     <button class="btn-primary" onclick="createTrip()" style="margin-top:4px">Trip erstellen</button>
+  </div>
+</div>
+
+<!-- EDIT EVENT -->
+<div class="modal-overlay" id="modalEditEvent" onclick="closeModalOutside(event,'modalEditEvent')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Event bearbeiten ✏️</div>
+    <input type="hidden" id="editEventId" />
+    <div class="form-row">
+      <label class="form-label">Name</label>
+      <input class="input" id="editEventName" placeholder="Event Name" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Datum</label>
+      <input class="input" id="editEventDate" type="date" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Icon</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="icon-pick" data-icon="🍽️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🍽️</span>
+        <span class="icon-pick" data-icon="🍺" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🍺</span>
+        <span class="icon-pick" data-icon="🚗" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🚗</span>
+        <span class="icon-pick" data-icon="✈️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">✈️</span>
+        <span class="icon-pick" data-icon="🏨" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🏨</span>
+        <span class="icon-pick" data-icon="🎉" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🎉</span>
+        <span class="icon-pick" data-icon="⛷️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">⛷️</span>
+      </div>
+      <input type="hidden" id="editEventIcon" value="🎉" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Trip</label>
+      <select class="input" id="editEventTrip">
+        <option value="">Kein Trip</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveEditEvent()" style="margin-top:6px">Speichern</button>
   </div>
 </div>
 
@@ -1644,6 +1687,7 @@ async function loadEvents() {
 async function addNewEvent() {
   const name = document.getElementById('newEventName').value.trim();
   const date = document.getElementById('newEventDate').value;
+  const tripId = document.getElementById('newEventTrip')?.value || null;
   if (!name) { showToast('Name eingeben!'); return; }
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -1652,7 +1696,9 @@ async function addNewEvent() {
       name: name,
       icon: selectedIcon,
       date: date ? formatDate(date) : '',
-      created_by: currentUser.id
+      created_by: currentUser.id,
+      status: 'offen',
+      trip_id: tripId || null
     });
     const res = await fetch(SUPABASE_URL + '/rest/v1/events', {
       method: 'POST',
@@ -2434,7 +2480,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
@@ -2632,6 +2678,11 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
   card.style.cssText = 'cursor:pointer;margin-bottom:8px';
 
   let adminHtml = '';
+  // Edit button always visible for members+
+  let editBtn = '';
+  if (canWrite()) {
+    editBtn = '<button onclick="openEditEvent(' + JSON.stringify(ev).replace(/</g,'\u003c') + ')" style="margin-top:8px;width:100%;padding:7px;border:1px solid var(--border);border-radius:10px;background:none;color:var(--brand);font-size:13px;font-weight:600;cursor:pointer">✏️ Bearbeiten</button>';
+  }
   if (isAdmin()) adminHtml = buildEventAdminBtns(ev.id, st);
 
   card.innerHTML =
@@ -2654,7 +2705,7 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
       '<div style="width:' + (drinkT/evTotal*100).toFixed(1) + '%;background:var(--drinks)" class="prog-seg"></div>' +
       '<div style="width:' + (travT/evTotal*100).toFixed(1) + '%;background:var(--travel)" class="prog-seg"></div>' +
     '</div>' : '') +
-    adminHtml;
+    adminHtml + editBtn;
 
   card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
@@ -2760,6 +2811,79 @@ function checkPermission() {
   if (!canWrite()) { showToast('⏳ Nur Mitglieder können Inhalte erstellen'); return false; }
   return true;
 }
+
+// ════════════════════════════════════════════════
+// TRIP DROPDOWN POPULATION
+// ════════════════════════════════════════════════
+async function populateTripDropdowns() {
+  const { data: trips } = await sb.from('trips').select('id,name,icon').eq('status', 'offen').order('created_at', { ascending: false });
+  const selectors = ['newEventTrip', 'editEventTrip'];
+  selectors.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Kein Trip</option>';
+    (trips || []).forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = (t.icon || '🗺️') + ' ' + t.name;
+      if (t.id === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ════════════════════════════════════════════════
+// EDIT EVENT
+// ════════════════════════════════════════════════
+async function openEditEvent(ev) {
+  await populateTripDropdowns();
+  document.getElementById('editEventId').value   = ev.id;
+  document.getElementById('editEventName').value = ev.name || '';
+  document.getElementById('editEventDate').value = ev.date || '';
+  document.getElementById('editEventIcon').value = ev.icon || '🎉';
+  // Set trip
+  const tripSel = document.getElementById('editEventTrip');
+  if (tripSel) tripSel.value = ev.trip_id || '';
+  // Highlight current icon
+  document.querySelectorAll('#modalEditEvent .icon-pick').forEach(el => {
+    el.style.background = el.dataset.icon === (ev.icon || '🎉') ? 'var(--brand-light)' : '';
+  });
+  openModal('modalEditEvent');
+}
+
+// Icon picker for edit modal
+document.addEventListener('click', e => {
+  const el = e.target.closest('.icon-pick');
+  if (!el) return;
+  const modal = el.closest('.modal');
+  if (!modal) return;
+  const hiddenId = modal.querySelector('input[type="hidden"]')?.id;
+  if (!hiddenId) return;
+  document.getElementById(hiddenId).value = el.dataset.icon;
+  modal.querySelectorAll('.icon-pick').forEach(i => i.style.background = '');
+  el.style.background = 'var(--brand-light)';
+});
+
+async function saveEditEvent() {
+  const id    = document.getElementById('editEventId').value;
+  const name  = document.getElementById('editEventName').value.trim();
+  const date  = document.getElementById('editEventDate').value;
+  const icon  = document.getElementById('editEventIcon').value || '🎉';
+  const tripId = document.getElementById('editEventTrip')?.value || null;
+  if (!name) { showToast('Name eingeben!'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ name, date: date ? formatDate(date) : '', icon, trip_id: tripId || null })
+  });
+  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+  closeModal('modalEditEvent');
+  await loadEvents();
+  showToast('✅ Event gespeichert!');
+}
+
 
 function initServiceWorker() {
   // Check for version update
