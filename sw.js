@@ -1,8 +1,14 @@
 // Pegelclub Service Worker v4
-const VERSION = '1.0.3';
+const VERSION = '2.1.3';
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => 
+      Promise.all(keys.map(k => caches.delete(k)))
+    ).then(() => clients.claim())
+  );
+});
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
