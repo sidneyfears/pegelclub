@@ -114,15 +114,15 @@ img { border-radius: 50%; object-fit: cover; }
    AUTH SCREEN
    ════════════════════════════════════════════ */
 #authScreen {
-  position: fixed; inset: 0; z-index: 500;
-  background: #0d0d16;
+  position: fixed; inset: 0; z-index: 9998;
+  background: #1a0a2e !important;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
 .auth-card {
   width: 100%; max-width: 400px;
-  background: #1e1e32;
-  border: 1px solid rgba(255,255,255,0.12);
+  background: #1e1e32 !important;
+  border: 2px solid #7c6af7 !important;
   border-radius: 24px;
   padding: 32px 28px;
 }
@@ -690,6 +690,7 @@ select.input option { background: var(--bg2); color: var(--text); }
 
 <!-- ═══════════════════════════════════════
      AUTH
+     ═══════════════════════════════════════ -->
 <div id="authScreen" style="display:none">
   <div class="auth-card">
     <div class="auth-logo">🍻</div>
@@ -1324,9 +1325,11 @@ function showAuth() {
   const ls = document.getElementById('loadingScreen');
   const as = document.getElementById('authScreen');
   const ap = document.getElementById('app');
-  if (ls) ls.style.display = 'none';
-  if (as) as.style.display = 'flex';
-  if (ap) ap.style.display = 'none';
+  console.log('showAuth: ls=', !!ls, 'as=', !!as, 'ap=', !!ap);
+  if (ls) { ls.style.display = 'none'; ls.style.visibility = 'hidden'; }
+  if (as) { as.style.display = 'flex'; as.style.visibility = 'visible'; as.style.zIndex = '9998'; }
+  if (ap) { ap.style.display = 'none'; }
+  console.log('showAuth done, as.display=', as ? as.style.display : 'NULL');
 }
 
 function showApp() {
@@ -2493,7 +2496,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.4';
+const APP_VERSION = '2.2.6';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
