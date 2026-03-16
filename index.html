@@ -975,12 +975,16 @@ if (!Promise.allSettled) {
 
       <!-- POLLS -->
       <div class="view" id="view-polls">
-        <div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-          <span style="font-size:22px">🗳️</span>
-          <span style="font-size:13px;color:var(--muted)">Stimmt gemeinsam ab!</span>
-          <button class="btn-ghost" style="margin-left:auto;white-space:nowrap" onclick="openModal('modalNewPoll')">+ Neu</button>
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:17px;flex:1">Abstimmungen 🗳️</div>
+          <button id="pollArchiveBtn" class="btn-sm" style="background:var(--brand-light);color:var(--brand)" onclick="togglePollArchive()">📦 Archiv</button>
+          <button class="btn-sm" onclick="openModal('modalNewPoll')">+ Neu</button>
         </div>
         <div id="pollList"></div>
+        <div id="pollArchiveList" style="display:none">
+          <div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--muted);letter-spacing:0.5px;margin:16px 0 10px">ARCHIVIERT</div>
+          <div id="pollArchiveItems"></div>
+        </div>
       </div>
 
       <!-- MEMBERS -->
@@ -1445,23 +1449,28 @@ function renderProfileView() {
   document.getElementById('profileName').textContent  = p.display_name || '–';
   document.getElementById('profileEmail').textContent = p.email || currentUser?.email || '–';
 
+  // Role badge
+  const roleMap = { anwaerter:{label:'⏳ Anwärter',cls:'role-anwaerter'}, mitglied:{label:'✅ Mitglied',cls:'role-mitglied'}, admin:{label:'⭐ Admin',cls:'role-admin'} };
+  const r = roleMap[p.role] || roleMap['anwaerter'];
+  const badge = document.getElementById('profileRoleBadge');
+  if (badge) badge.innerHTML = '<span class="role-badge ' + r.cls + '">' + r.label + '</span>';
+
+  // Anwärter notice
+  const notice = document.getElementById('anwaerterNotice');
+  if (notice) notice.style.display = p.role === 'anwaerter' ? 'block' : 'none';
+
+  // Show/hide admin tab
+  const adminBtn = document.getElementById('adminNavBtn');
+  if (adminBtn) adminBtn.style.display = isAdmin() ? 'flex' : 'none';
+
   // Stats
   sb.from('expenses').select('amount').eq('user_id', currentUser.id).then(({ data }) => {
     const total = (data || []).reduce((s, x) => s + x.amount, 0);
     const stats = document.getElementById('profileStats');
-    stats.innerHTML = `
-      <div class="profile-stat">
-        <div class="profile-stat-val">${(data||[]).length}</div>
-        <div class="profile-stat-lbl">Ausgaben</div>
-      </div>
-      <div class="profile-stat">
-        <div class="profile-stat-val">€${total.toFixed(0)}</div>
-        <div class="profile-stat-lbl">Bezahlt</div>
-      </div>
-      <div class="profile-stat">
-        <div class="profile-stat-val">${Object.keys(allProfiles).length}</div>
-        <div class="profile-stat-lbl">Mitglieder</div>
-      </div>`;
+    if (stats) stats.innerHTML =
+      '<div class="profile-stat"><div class="profile-stat-val">' + (data||[]).length + '</div><div class="profile-stat-lbl">Ausgaben</div></div>' +
+      '<div class="profile-stat"><div class="profile-stat-val">€' + total.toFixed(0) + '</div><div class="profile-stat-lbl">Bezahlt</div></div>' +
+      '<div class="profile-stat"><div class="profile-stat-val">' + Object.keys(allProfiles).length + '</div><div class="profile-stat-lbl">Mitglieder</div></div>';
   });
 }
 
@@ -1865,18 +1874,24 @@ async function addExpense() {
   } catch(e) { showToast('Fehler: ' + e.message); }
 }
 
-async function loadPolls() {
+async function loadPolls(showArchive = false) {
   const { data: polls } = await sb.from('polls').select('*').order('created_at', { ascending: false });
   const { data: votes  } = await sb.from('poll_votes').select('*');
-
   const list = document.getElementById('pollList');
+  const archiveItems = document.getElementById('pollArchiveItems');
   list.innerHTML = '';
+  if (archiveItems) archiveItems.innerHTML = '';
+
   if (!polls || !polls.length) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung – erstelle eine! 🗳️</div>';
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung!</div>';
     return;
   }
 
+  const statusMap = { offen:{label:'🟢 Offen',cls:'status-offen'}, geschlossen:{label:'🔒 Geschlossen',cls:'status-geschlossen'}, archiviert:{label:'📦 Archiviert',cls:'status-archiviert'} };
+
   polls.forEach(poll => {
+    const pollStatus = poll.status || 'offen';
+    const isArchived = pollStatus === 'archiviert';
     const options = poll.options || [];
     const pollVotes = (votes || []).filter(v => v.poll_id === poll.id);
     const total = pollVotes.length;
@@ -1886,46 +1901,116 @@ async function loadPolls() {
     const card = document.createElement('div');
     card.className = 'card';
 
-    let inner = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span class="tag" style="background:#dcfce7;color:#16a34a">Aktiv</span>
-        <span style="font-size:12px;color:var(--muted)">${total} Stimme${total!==1?'n':''}</span>
-      </div>
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">${poll.question}</div>`;
+    // Admin buttons
+    let adminBtns = '';
+    if (isAdmin()) {
+      adminBtns = '<div class="admin-actions" onclick="event.stopPropagation()">';
+      if (pollStatus !== 'offen')       adminBtns += '<button class="admin-action-btn success" onclick="setPollStatus(this)" data-id="' + poll.id + '" data-status="offen">🟢 Öffnen</button>';
+      if (pollStatus !== 'geschlossen') adminBtns += '<button class="admin-action-btn warn" onclick="setPollStatus(this)" data-id="' + poll.id + '" data-status="geschlossen">🔒 Schließen</button>';
+      if (pollStatus !== 'archiviert')  adminBtns += '<button class="admin-action-btn" onclick="setPollStatus(this)" data-id="' + poll.id + '" data-status="archiviert">📦 Archivieren</button>';
+      adminBtns += '<button class="admin-action-btn danger" onclick="deletePollById(this)" data-id="' + poll.id + '">🗑️ Löschen</button>';
+      adminBtns += '</div>';
+    }
+
+    let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+      '<span class="status-badge ' + (statusMap[pollStatus]?.cls||'') + '">' + (statusMap[pollStatus]?.label||pollStatus) + '</span>' +
+      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span></div>' +
+      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;margin-bottom:14px">' + poll.question + '</div>';
 
     options.forEach((opt, oi) => {
-      const cnt = pollVotes.filter(v => v.option_index === oi).length;
-      const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+      const cnt  = pollVotes.filter(v => v.option_index === oi).length;
+      const pct  = total > 0 ? Math.round(cnt / total * 100) : 0;
       const winning = cnt === maxV && cnt > 0;
       const voted   = myVote?.option_index === oi;
-
       const voterIds = pollVotes.filter(v => v.option_index === oi).map(v => v.user_id);
       const voterAvatars = voterIds.map(uid => {
         const p = allProfiles[uid];
-        return `<div class="avatar" style="width:20px;height:20px;background:${p?.color||'#5b4fcf'};font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">
-          ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : (p?.display_name||'?')[0].toUpperCase()}
-        </div>`;
+        return '<div class="avatar" style="width:20px;height:20px;background:' + (p?.color||'#5b4fcf') + ';font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">' +
+          (p?.avatar_url ? '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>' : (p?.display_name||'?')[0].toUpperCase()) + '</div>';
       }).join('');
 
-      inner += `
-        <div class="poll-option ${winning?'winning':''}" onclick="castVote(${poll.id}, ${oi})">
-          <div class="poll-fill" style="width:${pct}%;background:${winning?'var(--brand-light)':'#f5f4fb'}"></div>
-          <div class="poll-content">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-weight:600;font-size:14px">${opt}</span>
-              ${voted ? '<span style="color:var(--brand)">✓</span>' : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <div style="display:flex;margin-right:2px">${voterAvatars}</div>
-              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${winning?'var(--brand)':'var(--muted)'}">${pct}%</span>
-            </div>
-          </div>
-        </div>`;
+      const clickable = pollStatus === 'offen' ? ('onclick="castVoteEl(this)" data-pid="' + poll.id + '" data-oi="' + oi + '"') : '';
+      inner += '<div class="poll-option ' + (winning?'winning':'') + '" ' + clickable + ' style="' + (pollStatus !== 'offen' ? 'cursor:default;opacity:0.8' : '') + '">' +
+        '<div class="poll-fill" style="width:' + pct + '%;background:' + (winning?'var(--brand-light)':'#f5f4fb') + '"></div>' +
+        '<div class="poll-content">' +
+          '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:14px">' + opt + '</span>' + (voted?'<span style="color:var(--brand)">✓</span>':'') + '</div>' +
+          '<div style="display:flex;align-items:center;gap:8px"><div style="display:flex;margin-right:2px">' + voterAvatars + '</div>' +
+          '<span style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:' + (winning?'var(--brand)':'var(--muted)') + '">' + pct + '%</span></div>' +
+        '</div></div>';
     });
 
-    card.innerHTML = inner;
-    list.appendChild(card);
+    card.innerHTML = inner + adminBtns;
+
+    if (isArchived) {
+      if (archiveItems) archiveItems.appendChild(card);
+    } else {
+      list.appendChild(card);
+    }
   });
+}
+
+let pollArchiveVisible = false;
+function togglePollArchive() {
+  pollArchiveVisible = !pollArchiveVisible;
+  const archiveList = document.getElementById('pollArchiveList');
+  const btn = document.getElementById('pollArchiveBtn');
+  if (archiveList) archiveList.style.display = pollArchiveVisible ? 'block' : 'none';
+  if (btn) btn.style.background = pollArchiveVisible ? 'var(--brand)' : 'var(--brand-light)';
+  if (btn) btn.style.color = pollArchiveVisible ? '#fff' : 'var(--brand)';
+}
+
+async function setPollStatus(btn) {
+  const pollId = btn.getAttribute('data-id');
+  const status = btn.getAttribute('data-status');
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + pollId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status })
+  });
+  await loadPolls();
+  showToast({ offen:'🟢 Geöffnet', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' }[status]);
+}
+
+async function deletePollById(btn) {
+  if (!confirm('Umfrage löschen?')) return;
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + btn.getAttribute('data-id'), {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+  });
+  await loadPolls();
+  showToast('🗑️ Umfrage gelöscht');
+}
+
+function castVoteFromEl(el) {
+  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
+}
+
+function castVoteEl(el) {
+  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
+}
+
+async function castVote(pollId, optionIndex) {
+  if (!canWrite()) { showToast('⏳ Nur Mitglieder können abstimmen'); return; }
+  await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUser.id);
+  const { data: { session } } = await sb.auth.getSession();
+  await fetch(SUPABASE_URL + '/rest/v1/poll_votes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ poll_id: pollId, user_id: currentUser.id, option_index: optionIndex })
+  });
+  await loadPolls();
+  showToast('✅ Stimme abgegeben!');
+}
+
+
+function castVoteFromEl(el) {
+  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
+}
+
+function castVoteEl(el) {
+  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
 }
 
 async function castVote(pollId, optionIndex) {
