@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#5b4fcf" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -2434,7 +2434,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
@@ -2447,7 +2447,10 @@ function showUpdateBanner() {
 
 function applyUpdate() {
   localStorage.setItem('pegelclub_version', APP_VERSION);
-  window.location.reload(true);
+  // Force hard reload by adding cache-busting parameter
+  const url = new URL(window.location.href);
+  url.searchParams.set('v', APP_VERSION);
+  window.location.href = url.toString();
 }
 
 function checkVersion() {
