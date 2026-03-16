@@ -2,13 +2,14 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#5b4fcf" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Pegelclub" />
   <link rel="manifest" href="/manifest.json" />
   <title>Pegelclub 🍻</title>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
@@ -60,7 +61,6 @@ if (!Promise.allSettled) {
       overflow: hidden;
       display: flex;
       justify-content: center;
-      touch-action: pan-x pan-y;
     }
 
     #app {
@@ -166,7 +166,7 @@ if (!Promise.allSettled) {
       border: 1.5px solid var(--border);
       border-radius: 13px;
       padding: 13px 16px;
-      font-size: 16px;
+      font-size: 15px;
       font-family: 'DM Sans', sans-serif;
       outline: none;
       background: #fafafa;
@@ -614,7 +614,7 @@ if (!Promise.allSettled) {
       border: 1.5px solid var(--border);
       border-radius: 22px;
       padding: 10px 16px;
-      font-size: 16px;
+      font-size: 14px;
       font-family: 'DM Sans', sans-serif;
       outline: none;
       background: #fafafa;
@@ -778,98 +778,6 @@ if (!Promise.allSettled) {
       flex-shrink: 0;
     }
 
-    /* STATUS BADGES */
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 20px;
-      font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif;
-    }
-    .status-offen     { background: #dcfce7; color: #16a34a; }
-    .status-geschlossen { background: #fef3c7; color: #d97706; }
-    .status-archiviert  { background: #f3f4f6; color: #6b7280; }
-
-    /* TRIP CARD */
-    .trip-card {
-      background: var(--card);
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 14px rgba(91,79,207,0.05);
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-    .trip-header {
-      background: linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%);
-      padding: 16px 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer;
-    }
-    .trip-header-left { display: flex; align-items: center; gap: 12px; }
-    .trip-title {
-      font-family: 'Syne', sans-serif; font-weight: 800;
-      font-size: 16px; color: #fff;
-    }
-    .trip-meta { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
-    .trip-total {
-      font-family: 'Syne', sans-serif; font-weight: 800;
-      font-size: 18px; color: #fff;
-    }
-    .trip-events { padding: 12px 12px 4px; }
-    .trip-chevron { font-size: 18px; color: rgba(255,255,255,0.8); transition: transform 0.3s; }
-    .trip-chevron.open { transform: rotate(180deg); }
-
-    .admin-actions {
-      display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap;
-    }
-    .admin-action-btn {
-      padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border);
-      font-size: 12px; font-weight: 600; font-family: 'DM Sans', sans-serif;
-      cursor: pointer; background: #fff; color: var(--text);
-      transition: all 0.15s;
-    }
-    .admin-action-btn:hover { background: var(--bg); }
-    .admin-action-btn.danger { color: var(--red); border-color: #fecaca; background: #fef2f2; }
-    .admin-action-btn.success { color: var(--green); border-color: #bbf7d0; background: #f0fdf4; }
-    .admin-action-btn.warn { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
-
-    /* ROLE BADGES */
-    .role-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .role-anwaerter  { background: #f3f4f6; color: #6b7280; }
-    .role-mitglied   { background: #ede9fe; color: var(--brand); }
-    .role-admin      { background: #fef3c7; color: #d97706; }
-
-    .pending-card {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-radius: 16px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .role-select {
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 6px 10px;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      background: #fff;
-      color: var(--text);
-      cursor: pointer;
-      outline: none;
-    }
-
     .online-dot {
       width: 9px; height: 9px;
       border-radius: 50%;
@@ -1002,20 +910,14 @@ if (!Promise.allSettled) {
 
       <!-- EVENTS -->
       <div class="view active" id="view-events">
-        <div id="anwaerterNotice" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px 16px;margin-bottom:14px;font-size:13px;font-family:'DM Sans',sans-serif;color:#92400e;text-align:center">
-          ⏳ <b>Du bist noch Anwärter.</b> Ein Admin muss dich freischalten bevor du Inhalte erstellen kannst.
-        </div>
         <div class="hero-card">
           <div style="font-size:13px;opacity:0.8;font-family:'DM Sans',sans-serif;margin-bottom:4px">Gesamtausgaben</div>
           <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:38px;line-height:1.1" id="heroTotal">€0.00</div>
           <div style="font-size:13px;opacity:0.7;margin-top:4px" id="heroSub">Lade...</div>
         </div>
         <div class="section-header">
-          <div class="section-title">Trips & Events</div>
-          <div style="display:flex;gap:8px">
-            <button class="btn-sm" id="btnNewTrip" style="display:none" onclick="openModal('modalNewTrip')">🗺️ Trip</button>
-            <button class="btn-sm" onclick="openModal('modalNewEvent')">+ Event</button>
-          </div>
+          <div class="section-title">Events</div>
+          <button class="btn-sm" onclick="openModal('modalNewEvent')">+ Neu</button>
         </div>
         <div id="eventList"><div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Lade Events…</div></div>
       </div>
@@ -1056,18 +958,6 @@ if (!Promise.allSettled) {
         <div id="pollList"></div>
       </div>
 
-      <!-- ADMIN -->
-      <div class="view" id="view-admin">
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">⏳ Anwärter freischalten</div>
-          <div id="pendingList"><div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Keine Anwärter vorhanden ✅</div></div>
-        </div>
-        <div class="card">
-          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:14px">👥 Alle Mitglieder verwalten</div>
-          <div id="adminMemberList"></div>
-        </div>
-      </div>
-
       <!-- MEMBERS -->
       <div class="view" id="view-members">
         <div class="card" style="margin-bottom:16px">
@@ -1086,7 +976,6 @@ if (!Promise.allSettled) {
           <input type="file" id="avatarFileInput" accept="image/*" onchange="uploadAvatar(event)" />
           <div class="profile-name" id="profileName">–</div>
           <div class="profile-email" id="profileEmail">–</div>
-          <div id="profileRoleBadge" style="margin-bottom:12px"></div>
 
           <div class="profile-stat-row" id="profileStats"></div>
 
@@ -1101,11 +990,11 @@ if (!Promise.allSettled) {
           <button id="pushBtn" class="btn-primary" onclick="togglePushNotifications()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f59e0b,#d97706)">
             🔔 Benachrichtigungen aktivieren
           </button>
+          <button class="btn-primary" onclick="sendTestPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#f43f5e,#e11d48)">
+            📣 Test-Push an alle senden
+          </button>
           <button class="btn-primary" onclick="testLocalNotification()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#14b8a6,#0d9488)">
             🧪 Lokale Test-Notification
-          </button>
-          <button class="btn-primary" onclick="debugPush()" style="width:100%;margin-bottom:10px;background:linear-gradient(135deg,#6366f1,#4f46e5)">
-            🔍 Push Debuggen
           </button>
           <button class="btn-danger" onclick="handleLogout()">🚪 Abmelden</button>
         </div>
@@ -1117,7 +1006,7 @@ if (!Promise.allSettled) {
     <div id="chatView">
       <div class="chat-messages" id="chatMessages"></div>
       <div class="chat-bar">
-        <button onclick="toggleEmojiPicker()" style="width:38px;height:38px;border-radius:12px;background:var(--brand-light);border:none;cursor:pointer;font-size:20px;flex-shrink:0">😊</button>
+        <button class="emoji-btn" onclick="toggleEmojiPicker()" style="width:38px;height:38px;border-radius:12px;background:var(--brand-light);border:none;cursor:pointer;font-size:20px;flex-shrink:0">😊</button>
         <button onclick="document.getElementById('chatPhotoInput').click()" style="width:38px;height:38px;border-radius:12px;background:var(--brand-light);border:none;cursor:pointer;font-size:18px;flex-shrink:0">📷</button>
         <input type="file" id="chatPhotoInput" accept="image/*" style="display:none" onchange="sendPhoto(event)" />
         <input class="chat-input" id="chatInput" placeholder="Nachricht…" onkeydown="if(event.key==='Enter')sendMessage()" />
@@ -1125,7 +1014,6 @@ if (!Promise.allSettled) {
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
-      <!-- Emoji Picker -->
       <div id="emojiPicker" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;max-width:398px;background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.15);padding:12px;z-index:150;max-height:220px;overflow-y:auto">
         <div style="display:flex;flex-wrap:wrap;gap:2px" id="emojiGrid"></div>
       </div>
@@ -1154,10 +1042,6 @@ if (!Promise.allSettled) {
         <span class="nav-icon">👤</span>
         <span class="nav-label">Profil</span>
       </button>
-      <button class="nav-btn" id="adminNavBtn" style="display:none" onclick="switchTab('admin',this)">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">Admin</span>
-      </button>
     </nav>
 
   </div>
@@ -1170,12 +1054,6 @@ if (!Promise.allSettled) {
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Neues Event</div>
-    <div class="form-row">
-      <label class="form-label">Trip (optional)</label>
-      <select class="input" id="newEventTrip">
-        <option value="">— Kein Trip —</option>
-      </select>
-    </div>
     <div class="form-row">
       <label class="form-label">Name</label>
       <input class="input" id="newEventName" placeholder="z.B. Essen Hotel Freitag" />
@@ -1198,36 +1076,6 @@ if (!Promise.allSettled) {
       <input type="hidden" id="newEventIcon" value="🎉" />
     </div>
     <button class="btn-primary" onclick="addNewEvent()" style="margin-top:6px">Event erstellen</button>
-  </div>
-</div>
-
-<!-- NEW TRIP -->
-<div class="modal-overlay" id="modalNewTrip" onclick="closeModalOutside(event,'modalNewTrip')">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Neuen Trip erstellen</div>
-    <div class="form-row">
-      <label class="form-label">Trip Name</label>
-      <input class="input" id="newTripName" placeholder="z.B. München Weekend" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Datum</label>
-      <input class="input" id="newTripDate" type="date" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Icon</label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <span class="icon-pick" data-icon="🗺️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🗺️</span>
-        <span class="icon-pick" data-icon="✈️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">✈️</span>
-        <span class="icon-pick" data-icon="🏖️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🏖️</span>
-        <span class="icon-pick" data-icon="⛷️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">⛷️</span>
-        <span class="icon-pick" data-icon="🏕️" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🏕️</span>
-        <span class="icon-pick" data-icon="🎉" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🎉</span>
-        <span class="icon-pick" data-icon="🚂" style="font-size:28px;cursor:pointer;padding:4px;border-radius:8px">🚂</span>
-      </div>
-      <input type="hidden" id="newTripIcon" value="🗺️" />
-    </div>
-    <button class="btn-primary" onclick="createTrip()" style="margin-top:6px">Trip erstellen</button>
   </div>
 </div>
 
@@ -1280,9 +1128,7 @@ if (!Promise.allSettled) {
         <input class="input" placeholder="Option 2" style="flex:1" />
       </div>
     </div>
-    <button onclick="addPollOption()" style="width:100%;padding:10px;border:2px dashed var(--border);border-radius:12px;background:none;color:var(--brand);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px">
-      + Option hinzufügen
-    </button>
+    <button onclick="addPollOption()" style="width:100%;padding:10px;border:2px dashed var(--border);border-radius:12px;background:none;color:var(--brand);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;margin-bottom:12px">+ Option hinzufügen</button>
     <button class="btn-primary" onclick="createPoll()" style="margin-top:4px">Abstimmung starten</button>
   </div>
 </div>
@@ -1291,7 +1137,6 @@ if (!Promise.allSettled) {
 
 <!-- ==================== SCRIPT ==================== -->
 <script>
-
 // ════════════════════════════════════════════════
 // ⚙️  SUPABASE CONFIG  ← HIER EINTRAGEN
 // ════════════════════════════════════════════════
@@ -1299,11 +1144,6 @@ const SUPABASE_URL    = 'https://juriwvjdxqxjqjocvsro.supabase.co';
 const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1cml3dmpkeHF4anFqb2N2c3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTYzNTgsImV4cCI6MjA4OTEzMjM1OH0.ZzjNMR17fsZdw4-dgB3a0X8uoUMvGEPg5PCSqK68fuU';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-// ════════════════════════════════════════════════
-// ⚙️ PUSH CONFIG – VAPID Public Key eintragen
-// ════════════════════════════════════════════════
-const VAPID_PUBLIC_KEY = 'BLC8OGVcg5sM4VWD_gzct77DV9Jxl7a9BrWLDYRQ0rPtDaQrclxHpXC2IXW6FhzuYSntBy_7vBi-oI3rxIcpdII';
 
 // ════════════════════════════════════════════════
 // STATE
@@ -1416,16 +1256,6 @@ function showApp() {
   renderHeaderAvatar();
   loadAll();
   subscribeRealtime();
-  // Register service worker silently on start
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
-  // Show admin nav if admin
-  const adminBtn = document.getElementById('adminNavBtn');
-  if (adminBtn && currentProfile?.role === 'admin') adminBtn.style.display = '';
-  // Show anwaerter notice
-  const notice = document.getElementById('anwaerterNotice');
-  if (notice) notice.style.display = currentProfile?.role === 'anwaerter' ? '' : 'none';
 }
 
 // ════════════════════════════════════════════════
@@ -1494,22 +1324,10 @@ async function loadProfile() {
   if (data) {
     currentProfile = data;
   } else {
-    // Check if first user → make admin
-    const { data: allP } = await sb.from('profiles').select('id').limit(1);
-    const isFirst = !allP || allP.length === 0;
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const { data: np } = await sb.from('profiles').upsert({
-      id: currentUser.id,
-      email: currentUser.email,
-      display_name: currentUser.email.split('@')[0],
-      color,
-      role: isFirst ? 'admin' : 'anwaerter'
-    }).select().single();
+    const { data: np } = await sb.from('profiles').upsert({ id: currentUser.id, email: currentUser.email, display_name: currentUser.email.split('@')[0], color }).select().single();
     currentProfile = np;
   }
-  // Show admin nav if admin
-  const adminBtn = document.getElementById('adminNavBtn');
-  if (adminBtn) adminBtn.style.display = currentProfile?.role === 'admin' ? '' : 'none';
 }
 
 async function loadAllProfiles() {
@@ -1542,19 +1360,6 @@ function renderProfileView() {
 
   document.getElementById('profileName').textContent  = p.display_name || '–';
   document.getElementById('profileEmail').textContent = p.email || currentUser?.email || '–';
-
-  // Check push status
-  checkPushStatus();
-
-  // Role badge
-  const roleMap = {
-    anwaerter: { label: '⏳ Anwärter', cls: 'role-anwaerter' },
-    mitglied:  { label: '✅ Mitglied',  cls: 'role-mitglied'  },
-    admin:     { label: '⭐ Admin',     cls: 'role-admin'     },
-  };
-  const r = roleMap[p.role] || roleMap['anwaerter'];
-  const badge = document.getElementById('profileRoleBadge');
-  if (badge) badge.innerHTML = '<span class="role-badge ' + r.cls + '">' + r.label + '</span>';
 
   // Stats
   sb.from('expenses').select('amount').eq('user_id', currentUser.id).then(({ data }) => {
@@ -1626,19 +1431,11 @@ function renderMembers() {
     const av = avatarEl(p, 46);
     row.appendChild(av);
 
-    const roleMap2 = {
-      anwaerter: { label: '⏳ Anwärter', cls: 'role-anwaerter' },
-      mitglied:  { label: '✅ Mitglied',  cls: 'role-mitglied'  },
-      admin:     { label: '⭐ Admin',     cls: 'role-admin'     },
-    };
-    const pr = roleMap2[p.role] || roleMap2['anwaerter'];
     const info = document.createElement('div');
     info.style.flex = '1';
-    info.innerHTML =
-      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">' + (p.display_name || p.email) + '</div>' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
-      '<span class="role-badge ' + pr.cls + '">' + pr.label + '</span>' +
-      '</div>';
+    info.innerHTML = `
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">${p.display_name || p.email}</div>
+      <div style="font-size:12px;color:var(--muted)">${p.email}</div>`;
     row.appendChild(info);
 
     if (p.id === currentUser.id) {
@@ -1654,65 +1451,20 @@ function renderMembers() {
 }
 
 // ════════════════════════════════════════════════
-// TRIPS + EVENTS
+// EVENTS
 // ════════════════════════════════════════════════
-let allTrips = [];
-let openTripIds = new Set();
-
-function buildTripAdminBtns(id, status) {
-  var btns = '<div class="admin-actions" onclick="event.stopPropagation()">';
-  if (status !== 'offen')       btns += '<button class="admin-action-btn success" onclick="setTripStatus(this)" data-id="' + id + '" data-status="offen">🟢 Öffnen</button>';
-  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setTripStatus(this)" data-id="' + id + '" data-status="geschlossen">🔒 Schließen</button>';
-  if (status !== 'archiviert')  btns += '<button class="admin-action-btn" onclick="setTripStatus(this)" data-id="' + id + '" data-status="archiviert">📦 Archivieren</button>';
-  btns += '<button class="admin-action-btn danger" onclick="deleteTripById(this)" data-id="' + id + '">🗑️ Löschen</button>';
-  btns += '</div>';
-  return btns;
-}
-
-function buildEventAdminBtns(id, status) {
-  var btns = '<div class="admin-actions" onclick="event.stopPropagation()">';
-  if (status !== 'offen')       btns += '<button class="admin-action-btn success" onclick="setEventStatus(this)" data-id="' + id + '" data-status="offen">🟢 Öffnen</button>';
-  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setEventStatus(this)" data-id="' + id + '" data-status="geschlossen">🔒 Schließen</button>';
-  if (status !== 'archiviert')  btns += '<button class="admin-action-btn" onclick="setEventStatus(this)" data-id="' + id + '" data-status="archiviert">📦 Archivieren</button>';
-  btns += '<button class="admin-action-btn danger" onclick="deleteEventById(this)" data-id="' + id + '">🗑️ Löschen</button>';
-  btns += '</div>';
-  return btns;
-}
-
 async function loadAll() {
   await loadAllProfiles();
   await loadEvents();
 }
 
-async function loadTrips() {
-  const { data } = await sb.from('trips').select('*').order('created_at', { ascending: false });
-  allTrips = data || [];
-  // Populate trip selector in event modal
-  const sel = document.getElementById('newEventTrip');
-  if (sel) {
-    sel.innerHTML = '<option value="">— Kein Trip —</option>';
-    allTrips.filter(t => t.status !== 'archiviert').forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = t.icon + ' ' + t.name;
-      sel.appendChild(opt);
-    });
-  }
-  return allTrips;
-}
-
 async function loadEvents() {
-  await loadTrips();
   const { data: events } = await sb.from('events').select('*').order('created_at', { ascending: false });
   const { data: allExp  } = await sb.from('expenses').select('*');
 
   const total = (allExp || []).reduce((s, x) => s + Number(x.amount), 0);
   document.getElementById('heroTotal').textContent = '€' + total.toFixed(2);
-  document.getElementById('heroSub').textContent = Object.keys(allProfiles).length + ' Mitglieder · ' + (events||[]).length + ' Events';
-
-  // Show trip button for admins
-  const tripBtn = document.getElementById('btnNewTrip');
-  if (tripBtn) tripBtn.style.display = isAdmin() ? '' : 'none';
+  document.getElementById('heroSub').textContent   = Object.keys(allProfiles).length + ' Mitglieder · ' + (events||[]).length + ' Events';
 
   const list = document.getElementById('eventList');
   list.innerHTML = '';
@@ -1722,212 +1474,76 @@ async function loadEvents() {
     return;
   }
 
-  const statusLabel = { offen: '🟢 Offen', geschlossen: '🔒 Geschlossen', archiviert: '📦 Archiviert' };
-  const statusCls   = { offen: 'status-offen', geschlossen: 'status-geschlossen', archiviert: 'status-archiviert' };
+  events.forEach((ev, idx) => {
+    const evExp = (allExp || []).filter(e => e.event_id === ev.id);
+    const evTotal = evExp.reduce((s, x) => s + Number(x.amount), 0);
+    const memberCount = Object.keys(allProfiles).length || 1;
+    const perP = evTotal / memberCount;
 
-  // Group events by trip
-  const tripsWithEvents = allTrips.map(t => ({
-    trip: t,
-    events: (events || []).filter(e => e.trip_id === t.id)
-  })).filter(g => g.events.length > 0);
+    const foodT   = evExp.filter(e => e.category==='food').reduce((s,x)=>s+Number(x.amount),0);
+    const drinkT  = evExp.filter(e => e.category==='drinks').reduce((s,x)=>s+Number(x.amount),0);
+    const travT   = evExp.filter(e => e.category==='travel').reduce((s,x)=>s+Number(x.amount),0);
 
-  // Render trips
-  tripsWithEvents.forEach(({ trip, events: tevs }) => {
-    const tripTotal = tevs.reduce((s, ev) => {
-      const evExp = (allExp||[]).filter(e => e.event_id === ev.id);
-      return s + evExp.reduce((ss, x) => ss + Number(x.amount), 0);
-    }, 0);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'cursor:pointer;animation:fadeUp 0.25s ease;animation-delay:' + (idx*0.05) + 's;animation-fill-mode:both';
+    card.onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
 
-    const isOpen = openTripIds.has(trip.id);
-    const tripCard = document.createElement('div');
-    tripCard.className = 'trip-card';
-
-    let adminBtns = '';
-    if (isAdmin()) {
-      adminBtns = buildTripAdminBtns(trip.id, trip.status || 'offen');
-    }
-
-    tripCard.innerHTML =
-      '<div class="trip-header" onclick="toggleTrip(\'' + trip.id + '\')">' +
-        '<div class="trip-header-left">' +
-          '<span style="font-size:28px">' + (trip.icon||'🗺️') + '</span>' +
-          '<div>' +
-            '<div class="trip-title">' + trip.name + '</div>' +
-            '<div class="trip-meta">' + tevs.length + ' Events · <span class="status-badge ' + statusCls[trip.status||'offen'] + '">' + statusLabel[trip.status||'offen'] + '</span></div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<div class="trip-total">€' + tripTotal.toFixed(2) + '</div>' +
-          '<div class="trip-chevron' + (isOpen ? ' open' : '') + '" id="chev-' + trip.id + '">▾</div>' +
-        '</div>' +
-      '</div>' +
-      '<div id="trip-events-' + trip.id + '" style="display:' + (isOpen ? 'block' : 'none') + '">' +
-        '<div class="trip-events" id="trip-events-inner-' + trip.id + '"></div>' +
-        (isAdmin() ? '<div style="padding:0 12px 12px">' + adminBtns + '</div>' : '') +
-      '</div>';
-
-    list.appendChild(tripCard);
-
-    const inner = tripCard.querySelector('#trip-events-inner-' + trip.id);
-    tevs.forEach(ev => renderEventCard(ev, allExp, inner, statusCls, statusLabel));
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="emoji-icon" style="background:var(--brand-light)">${ev.icon||'🎉'}</div>
+        <div style="flex:1">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:2px">${ev.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${ev.date||''} · ${evExp.length} Ausgaben</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€${evTotal.toFixed(2)}</div>
+          <div style="font-size:11px;color:var(--muted)">€${perP.toFixed(2)}/P</div>
+        </div>
+      </div>
+      <div class="prog-bar">
+        ${evTotal>0?`
+          <div style="width:${(foodT/evTotal*100).toFixed(1)}%;background:var(--food)" class="prog-seg"></div>
+          <div style="width:${(drinkT/evTotal*100).toFixed(1)}%;background:var(--drinks)" class="prog-seg"></div>
+          <div style="width:${(travT/evTotal*100).toFixed(1)}%;background:var(--travel)" class="prog-seg"></div>
+        `:''}
+      </div>`;
+    list.appendChild(card);
   });
-
-  // Render unassigned events
-  const unassigned = (events || []).filter(e => !e.trip_id);
-  if (unassigned.length > 0) {
-    if (tripsWithEvents.length > 0) {
-      const sep = document.createElement('div');
-      sep.style.cssText = 'font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--muted);margin:8px 0 10px';
-      sep.textContent = 'Ohne Trip';
-      list.appendChild(sep);
-    }
-    unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, statusLabel));
-  }
-}
-
-function toggleTrip(tripId) {
-  if (openTripIds.has(tripId)) { openTripIds.delete(tripId); } else { openTripIds.add(tripId); }
-  const el = document.getElementById('trip-events-' + tripId);
-  const chev = document.getElementById('chev-' + tripId);
-  if (el) el.style.display = openTripIds.has(tripId) ? 'block' : 'none';
-  if (chev) chev.classList.toggle('open', openTripIds.has(tripId));
-}
-
-function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
-  const evExp = (allExp || []).filter(e => e.event_id === ev.id);
-  const evTotal = evExp.reduce((s, x) => s + Number(x.amount), 0);
-  const memberCount = Object.keys(allProfiles).length || 1;
-  const perP = evTotal / memberCount;
-  const foodT  = evExp.filter(e => e.category==='food').reduce((s,x)=>s+Number(x.amount),0);
-  const drinkT = evExp.filter(e => e.category==='drinks').reduce((s,x)=>s+Number(x.amount),0);
-  const travT  = evExp.filter(e => e.category==='travel').reduce((s,x)=>s+Number(x.amount),0);
-  const st = ev.status || 'offen';
-
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.style.cssText = 'cursor:pointer;margin-bottom:10px';
-
-  let adminHtml = '';
-  if (isAdmin()) { adminHtml = buildEventAdminBtns(ev.id, st); }
-
-  card.innerHTML =
-    '<div style="display:flex;align-items:center;gap:14px">' +
-      '<div class="emoji-icon" style="background:var(--brand-light)">' + (ev.icon||'🎉') + '</div>' +
-      '<div style="flex:1">' +
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
-          '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">' + ev.name + '</span>' +
-          '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
-        '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
-      '</div>' +
-      '<div style="text-align:right">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:17px;color:var(--brand)">€' + evTotal.toFixed(2) + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">€' + perP.toFixed(2) + '/P</div>' +
-      '</div>' +
-    '</div>' +
-    (evTotal > 0 ? '<div class="prog-bar"><div style="width:' + (foodT/evTotal*100).toFixed(1) + '%;background:var(--food)" class="prog-seg"></div><div style="width:' + (drinkT/evTotal*100).toFixed(1) + '%;background:var(--drinks)" class="prog-seg"></div><div style="width:' + (travT/evTotal*100).toFixed(1) + '%;background:var(--travel)" class="prog-seg"></div></div>' : '') +
-    adminHtml;
-
-  card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
-  card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
-  card.querySelector('[style*="text-align:right"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
-  container.appendChild(card);
-}
-
-async function createTrip() {
-  if (!isAdmin()) { showToast('Nur Admins können Trips erstellen'); return; }
-  const name = document.getElementById('newTripName').value.trim();
-  const date = document.getElementById('newTripDate').value;
-  if (!name) { showToast('Name eingeben!'); return; }
-  const tripIcon = document.getElementById('newTripIcon').value || '🗺️';
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    const res = await fetch(SUPABASE_URL + '/rest/v1/trips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ name, icon: tripIcon, date: date ? formatDate(date) : '', status: 'offen', created_by: currentUser.id })
-    });
-    if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
-    closeModal('modalNewTrip');
-    document.getElementById('newTripName').value = '';
-    document.getElementById('newTripDate').value = '';
-    await loadEvents();
-    showToast('🗺️ Trip erstellt!');
-  } catch(e) { showToast('Fehler: ' + e.message); }
-}
-
-async function setTripStatus(btnOrId, status) {
-  var tripId = typeof btnOrId === 'string' ? btnOrId : btnOrId.getAttribute('data-id');
-  status = status || (typeof btnOrId === 'string' ? status : btnOrId.getAttribute('data-status'));
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/trips?id=eq.' + tripId, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ status })
-  });
-  await loadEvents();
-  const labels = { offen: '🟢 Geöffnet', geschlossen: '🔒 Geschlossen', archiviert: '📦 Archiviert' };
-  showToast('Trip ' + (labels[status]||status));
-}
-
-async function deleteTripById(btn) { deleteTrip(btn.getAttribute('data-id')); }
-async function deleteTrip(tripId) {
-  if (!confirm('Trip wirklich löschen?')) return;
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/trips?id=eq.' + tripId, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  await loadEvents();
-  showToast('🗑️ Trip gelöscht');
-}
-
-async function setEventStatus(btnOrId, status) {
-  var eventId = typeof btnOrId === 'string' ? btnOrId : btnOrId.getAttribute('data-id');
-  status = status || (typeof btnOrId === 'string' ? status : btnOrId.getAttribute('data-status'));
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + eventId, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ status })
-  });
-  await loadEvents();
-  const labels = { offen: '🟢 Geöffnet', geschlossen: '🔒 Geschlossen', archiviert: '📦 Archiviert' };
-  showToast('Event ' + (labels[status]||status));
-}
-
-async function deleteEventById(btn) { deleteEvent(btn.getAttribute('data-id')); }
-async function deleteEvent(eventId) {
-  if (!confirm('Event und alle Ausgaben löschen?')) return;
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/events?id=eq.' + eventId, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  await loadEvents();
-  showToast('🗑️ Event gelöscht');
 }
 
 async function addNewEvent() {
-  if (!checkPermission()) return;
   const name = document.getElementById('newEventName').value.trim();
   const date = document.getElementById('newEventDate').value;
-  const tripId = document.getElementById('newEventTrip').value || null;
   if (!name) { showToast('Name eingeben!'); return; }
   try {
     const { data: { session } } = await sb.auth.getSession();
+    const token = session.access_token;
+    const body = JSON.stringify({
+      name: name,
+      icon: selectedIcon,
+      date: date ? formatDate(date) : '',
+      created_by: currentUser.id
+    });
     const res = await fetch(SUPABASE_URL + '/rest/v1/events', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ name, icon: selectedIcon, date: date ? formatDate(date) : '', created_by: currentUser.id, trip_id: tripId, status: 'offen' })
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + token,
+        'Prefer': 'return=minimal'
+      },
+      body: body
     });
-    if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+    if (!res.ok) {
+      const err = await res.text();
+      showToast('Fehler: ' + err);
+      return;
+    }
     closeModal('modalNewEvent');
     document.getElementById('newEventName').value = '';
     document.getElementById('newEventDate').value = '';
-    if (tripId) openTripIds.add(tripId);
     await loadEvents();
-    await sendPush('event', { sender: currentProfile?.display_name || 'Jemand', name });
     showToast('Event erstellt!');
   } catch(e) { showToast('Fehler: ' + e.message); }
 }
@@ -1954,6 +1570,7 @@ async function loadExpenses() {
   document.getElementById('expTotal').textContent     = '€' + total.toFixed(2);
   document.getElementById('expPerPerson').textContent = '€' + perP.toFixed(2);
 
+  // Split grid
   const grid = document.getElementById('splitGrid');
   grid.innerHTML = '';
   Object.values(allProfiles).forEach(p => {
@@ -1961,13 +1578,15 @@ async function loadExpenses() {
     const owes = perP - paid;
     const cell = document.createElement('div');
     cell.className = 'split-cell';
-    cell.style.cssText = 'background:' + (owes>0?'#fff7ed':'#f0fdf4') + ';border:1px solid ' + (owes>0?'#fed7aa':'#bbf7d0');
+    cell.style.cssText = `background:${owes>0?'#fff7ed':'#f0fdf4'};border:1px solid ${owes>0?'#fed7aa':'#bbf7d0'}`;
     const av = avatarEl(p, 26);
-    cell.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>' +
-      '<div style="font-size:11px;color:var(--muted)">Bezahlt</div>' +
-      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px">€' + paid.toFixed(2) + '</div>' +
-      '<div style="margin-top:3px;font-size:12px;font-weight:600;color:' + (owes>0?'#f59e0b':'#10b981') + '">' +
-        (owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)) + '</div>';
+    cell.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>
+      <div style="font-size:11px;color:var(--muted)">Bezahlt</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">€${paid.toFixed(2)}</div>
+      <div style="margin-top:3px;font-size:12px;font-weight:600;color:${owes>0?'#f59e0b':'#10b981'}">
+        ${owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
+      </div>`;
     cell.querySelector('div').prepend(av);
     const nameSpan = document.createElement('span');
     nameSpan.style.cssText = 'font-size:13px;font-weight:600';
@@ -1976,9 +1595,9 @@ async function loadExpenses() {
     grid.appendChild(cell);
   });
 
+  // Settle
   const settle = document.getElementById('settleList');
   settle.innerHTML = '';
-  const payments = await loadPayments(currentEventId);
   const balances = Object.values(allProfiles).map(p => {
     const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
     return { profile: p, balance: paid - perP };
@@ -1986,16 +1605,21 @@ async function loadExpenses() {
   const debtors   = balances.filter(b => b.balance < -0.01).sort((a,b) => a.balance - b.balance);
   const creditors = balances.filter(b => b.balance >  0.01).sort((a,b) => b.balance - a.balance);
 
+  // Load existing payment confirmations
+  const payments = await loadPayments(currentEventId);
+
   if (!debtors.length) {
     settle.innerHTML = '<div style="text-align:center;padding:10px;color:var(--green);font-size:14px">✅ Alle quitt!</div>';
   } else {
     debtors.forEach(d => creditors.forEach(c => {
       const amt = Math.min(Math.abs(d.balance), c.balance);
       if (amt < 0.01) return;
+
       const payment = payments.find(p => p.debtor_id === d.profile.id && p.creditor_id === c.profile.id);
       const debtorConfirmed   = payment?.debtor_confirmed   || false;
       const creditorConfirmed = payment?.creditor_confirmed || false;
       const fullyPaid = debtorConfirmed && creditorConfirmed;
+
       const isDebtor   = currentUser.id === d.profile.id;
       const isCreditor = currentUser.id === c.profile.id;
 
@@ -2003,6 +1627,8 @@ async function loadExpenses() {
       row.className = 'settle-row';
       row.style.flexDirection = 'column';
       row.style.alignItems = 'stretch';
+
+      // Top row: who pays whom
       const topRow = document.createElement('div');
       topRow.style.cssText = 'display:flex;align-items:center;gap:8px';
       const avD = avatarEl(d.profile, 30);
@@ -2012,50 +1638,71 @@ async function loadExpenses() {
       topRow.appendChild(avC);
       topRow.innerHTML += '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--brand);margin-left:6px">€' + amt.toFixed(2) + '</div>';
       row.appendChild(topRow);
+
+      // Status section
       const status = document.createElement('div');
       status.className = 'settle-status';
+
       if (fullyPaid) {
         status.innerHTML = '<div class="paid-badge">✅ Bezahlt & bestätigt von beiden</div>';
       } else {
         const btnRow = document.createElement('div');
         btnRow.style.cssText = 'display:flex;gap:8px';
+
+        // Debtor confirm button
         const btnD = document.createElement('button');
         btnD.className = 'confirm-btn' + (debtorConfirmed ? ' confirmed' : (isDebtor ? ' mine' : ''));
         btnD.disabled = debtorConfirmed || !isDebtor;
-        btnD.innerHTML = debtorConfirmed ? '✓ ' + (d.profile.display_name||'?') + ' hat gezahlt' : (isDebtor ? '💸 Ich habe gezahlt' : '⏳ ' + (d.profile.display_name||'?') + ' ausstehend');
-        if (isDebtor && !debtorConfirmed) btnD.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'debtor');
+        btnD.innerHTML = debtorConfirmed
+          ? '✓ ' + (d.profile.display_name||'?') + ' hat gezahlt'
+          : (isDebtor ? '💸 Ich habe gezahlt' : '⏳ ' + (d.profile.display_name||'?') + ' noch ausstehend');
+        if (isDebtor && !debtorConfirmed) {
+          btnD.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'debtor');
+        }
+        btnRow.appendChild(btnD);
+
+        // Creditor confirm button
         const btnC = document.createElement('button');
         btnC.className = 'confirm-btn' + (creditorConfirmed ? ' confirmed' : (isCreditor ? ' mine' : ''));
         btnC.disabled = creditorConfirmed || !isCreditor;
-        btnC.innerHTML = creditorConfirmed ? '✓ ' + (c.profile.display_name||'?') + ' hat empfangen' : (isCreditor ? '✅ Geld erhalten' : '⏳ ' + (c.profile.display_name||'?') + ' ausstehend');
-        if (isCreditor && !creditorConfirmed) btnC.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'creditor');
-        btnRow.appendChild(btnD);
+        btnC.innerHTML = creditorConfirmed
+          ? '✓ ' + (c.profile.display_name||'?') + ' hat empfangen'
+          : (isCreditor ? '✅ Geld erhalten' : '⏳ ' + (c.profile.display_name||'?') + ' noch ausstehend');
+        if (isCreditor && !creditorConfirmed) {
+          btnC.onclick = () => confirmPayment(currentEventId, d.profile.id, c.profile.id, 'creditor');
+        }
         btnRow.appendChild(btnC);
         status.appendChild(btnRow);
       }
+
       row.appendChild(status);
       settle.appendChild(row);
     }));
   }
 
+  // List
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
-  const catColor = { food:'var(--food)', drinks:'var(--drinks)', travel:'var(--travel)' };
-  const catLabel = { food:'Essen', drinks:'Trinken', travel:'Reise' };
-  const catIcon  = { food:'🍽️', drinks:'🍷', travel:'🚗' };
   allExp.forEach((exp, i) => {
     const p = allProfiles[exp.user_id];
     const div = document.createElement('div');
     div.className = 'card-sm';
-    div.innerHTML = '<div style="display:flex;align-items:center;gap:12px">' +
-      '<div class="emoji-icon" style="background:' + catColor[exp.category] + '18;width:42px;height:42px;border-radius:12px">' + (catIcon[exp.category]||'💰') + '</div>' +
-      '<div style="flex:1"><div style="font-weight:600;font-size:14px">' + exp.description + '</div>' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-top:3px" id="exp-meta-' + exp.id + '">' +
-      '<span class="tag" style="background:' + catColor[exp.category] + '18;color:' + catColor[exp.category] + '">' + (catLabel[exp.category]||exp.category) + '</span></div></div>' +
-      '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:16px">€' + Number(exp.amount).toFixed(2) + '</div></div>';
+    div.style.animationDelay = (i*0.04)+'s';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="emoji-icon" style="background:${catColor[exp.category]}18;width:42px;height:42px;border-radius:12px">${catIcon[exp.category]||'💰'}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${exp.description}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px" id="exp-meta-${exp.id}">
+            <span class="tag" style="background:${catColor[exp.category]}18;color:${catColor[exp.category]}">${catLabel[exp.category]||exp.category}</span>
+          </div>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px">€${Number(exp.amount).toFixed(2)}</div>
+      </div>`;
     if (p) {
-      const meta = div.querySelector('#exp-meta-' + exp.id);
+      const meta = div.querySelector(`#exp-meta-${exp.id}`);
       const av = avatarEl(p, 16);
+      meta.prepend(document.createTextNode(''));
       meta.prepend(av);
       const nm = document.createElement('span');
       nm.style.cssText = 'font-size:12px;color:var(--muted)';
@@ -2067,22 +1714,26 @@ async function loadExpenses() {
 }
 
 async function addExpense() {
-  if (!checkPermission()) return;
   const desc   = document.getElementById('expDesc').value.trim();
   const amount = parseFloat(document.getElementById('expAmount').value);
   const cat    = document.getElementById('expCat').value;
+
   if (!desc)          { showToast('Beschreibung fehlt'); return; }
   if (!amount || amount <= 0) { showToast('Betrag ungueltig'); return; }
   if (!currentEventId){ showToast('Kein Event ausgewaehlt'); return; }
-  const evChk = (await sb.from('events').select('status').eq('id', currentEventId).single()).data;
-  if (evChk?.status === 'geschlossen') { showToast('🔒 Event ist geschlossen'); return; }
-  if (evChk?.status === 'archiviert')  { showToast('📦 Event ist archiviert'); return; }
+
   try {
     const { data: { session } } = await sb.auth.getSession();
+    const token = session.access_token;
     const res = await fetch(SUPABASE_URL + '/rest/v1/expenses', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ event_id: currentEventId, user_id: currentUser.id, amount, description: desc, category: cat })
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + token,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ event_id: currentEventId, user_id: currentUser.id, amount: amount, description: desc, category: cat })
     });
     if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
     closeModal('modalAddExpense');
@@ -2090,172 +1741,148 @@ async function addExpense() {
     document.getElementById('expAmount').value = '';
     await loadExpenses();
     await loadEvents();
-    await sendPush('expense', { sender: currentProfile?.display_name || 'Jemand', desc, amount });
     showToast('Ausgabe gespeichert!');
   } catch(e) { showToast('Fehler: ' + e.message); }
 }
 
-// ════════════════════════════════════════════════
-// PAYMENTS
-// ════════════════════════════════════════════════
-async function loadPayments(eventId) {
-  const { data } = await sb.from('payments').select('*').eq('event_id', eventId);
-  return data || [];
-}
-
-async function confirmPayment(eventId, debtorId, creditorId, role) {
-  const payments = await loadPayments(eventId);
-  const existing = payments.find(p => p.debtor_id === debtorId && p.creditor_id === creditorId);
-  const { data: { session } } = await sb.auth.getSession();
-  if (existing) {
-    const update = {};
-    if (role === 'debtor') update.debtor_confirmed = true;
-    if (role === 'creditor') update.creditor_confirmed = true;
-    await fetch(SUPABASE_URL + '/rest/v1/payments?id=eq.' + existing.id, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify(update)
-    });
-  } else {
-    const body = { event_id: eventId, debtor_id: debtorId, creditor_id: creditorId, debtor_confirmed: role==='debtor', creditor_confirmed: role==='creditor' };
-    await fetch(SUPABASE_URL + '/rest/v1/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify(body)
-    });
-  }
-  const otherUserId = role === 'debtor' ? creditorId : debtorId;
-  await sendPush('payment', { sender: currentProfile?.display_name || 'Jemand', role, target_user_id: otherUserId });
-  showToast(role === 'debtor' ? '💸 Zahlung bestätigt!' : '✅ Eingang bestätigt!');
-  await loadExpenses();
-}
-
-// ════════════════════════════════════════════════
-// POLLS
-// ════════════════════════════════════════════════
 async function loadPolls() {
   const { data: polls } = await sb.from('polls').select('*').order('created_at', { ascending: false });
   const { data: votes  } = await sb.from('poll_votes').select('*');
+
   const list = document.getElementById('pollList');
   list.innerHTML = '';
   if (!polls || !polls.length) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung!</div>';
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Noch keine Abstimmung – erstelle eine! 🗳️</div>';
     return;
   }
+
   polls.forEach(poll => {
-    const pollStatus = poll.status || 'offen';
-    const pollStatusMap = { offen:{label:'🟢 Offen',cls:'status-offen'}, geschlossen:{label:'🔒 Geschlossen',cls:'status-geschlossen'}, archiviert:{label:'📦 Archiviert',cls:'status-archiviert'} };
-    if (pollStatus === 'archiviert') return;
     const options = poll.options || [];
     const pollVotes = (votes || []).filter(v => v.poll_id === poll.id);
     const total = pollVotes.length;
     const maxV  = Math.max(0, ...options.map((_, i) => pollVotes.filter(v => v.option_index === i).length));
     const myVote = pollVotes.find(v => v.user_id === currentUser.id);
+
     const card = document.createElement('div');
     card.className = 'card';
-    let adminPollBtns = '';
-    if (isAdmin()) { adminPollBtns = buildPollAdminBtns(poll.id, pollStatus); }
-    let inner = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
-      '<span class="status-badge ' + pollStatusMap[pollStatus].cls + '">' + pollStatusMap[pollStatus].label + '</span>' +
-      '<span style="font-size:12px;color:var(--muted)">' + total + ' Stimme' + (total!==1?'n':'') + '</span></div>' +
-      '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">' + poll.question + '</div>';
+
+    let inner = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="tag" style="background:#dcfce7;color:#16a34a">Aktiv</span>
+        <span style="font-size:12px;color:var(--muted)">${total} Stimme${total!==1?'n':''}</span>
+      </div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:16px">${poll.question}</div>`;
+
     options.forEach((opt, oi) => {
       const cnt = pollVotes.filter(v => v.option_index === oi).length;
       const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
       const winning = cnt === maxV && cnt > 0;
       const voted   = myVote?.option_index === oi;
+
       const voterIds = pollVotes.filter(v => v.option_index === oi).map(v => v.user_id);
       const voterAvatars = voterIds.map(uid => {
         const p = allProfiles[uid];
-        return '<div class="avatar" style="width:20px;height:20px;background:' + (p?.color||'#5b4fcf') + ';font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">' +
-          (p?.avatar_url ? '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>' : (p?.display_name||'?')[0].toUpperCase()) + '</div>';
+        return `<div class="avatar" style="width:20px;height:20px;background:${p?.color||'#5b4fcf'};font-size:8px;border:2px solid #fff;margin-left:-5px;overflow:hidden">
+          ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : (p?.display_name||'?')[0].toUpperCase()}
+        </div>`;
       }).join('');
-      inner += '<div class="poll-option ' + (winning?'winning':'') + '" onclick="castVote(' + poll.id + ',' + oi + ')">' +
-        '<div class="poll-fill" style="width:' + pct + '%;background:' + (winning?'var(--brand-light)':'#f5f4fb') + '"></div>' +
-        '<div class="poll-content">' +
-          '<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:14px">' + opt + '</span>' + (voted?'<span style="color:var(--brand)">✓</span>':'') + '</div>' +
-          '<div style="display:flex;align-items:center;gap:8px"><div style="display:flex;margin-right:2px">' + voterAvatars + '</div>' +
-          '<span style="font-family:Syne,sans-serif;font-weight:800;font-size:14px;color:' + (winning?'var(--brand)':'var(--muted)') + '">' + pct + '%</span></div>' +
-        '</div></div>';
+
+      inner += `
+        <div class="poll-option ${winning?'winning':''}" onclick="castVote(${poll.id}, ${oi})">
+          <div class="poll-fill" style="width:${pct}%;background:${winning?'var(--brand-light)':'#f5f4fb'}"></div>
+          <div class="poll-content">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-weight:600;font-size:14px">${opt}</span>
+              ${voted ? '<span style="color:var(--brand)">✓</span>' : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;margin-right:2px">${voterAvatars}</div>
+              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${winning?'var(--brand)':'var(--muted)'}">${pct}%</span>
+            </div>
+          </div>
+        </div>`;
     });
-    card.innerHTML = inner + adminPollBtns;
+
+    card.innerHTML = inner;
     list.appendChild(card);
   });
 }
 
-function buildPollAdminBtns(id, status) {
-  var btns = '<div class="admin-actions">';
-  if (status !== 'offen')       btns += '<button class="admin-action-btn success" onclick="setPollStatus(this)" data-id="' + id + '" data-status="offen">🟢 Öffnen</button>';
-  if (status !== 'geschlossen') btns += '<button class="admin-action-btn warn" onclick="setPollStatus(this)" data-id="' + id + '" data-status="geschlossen">🔒 Schließen</button>';
-  if (status !== 'archiviert')  btns += '<button class="admin-action-btn" onclick="setPollStatus(this)" data-id="' + id + '" data-status="archiviert">📦 Archivieren</button>';
-  btns += '<button class="admin-action-btn danger" onclick="deletePollById(this)" data-id="' + id + '">🗑️ Löschen</button>';
-  btns += '</div>';
-  return btns;
-}
-
-async function setPollStatus(btn) {
-  const pollId = btn.getAttribute('data-id');
-  const status = btn.getAttribute('data-status');
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + pollId, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ status })
-  });
-  await loadPolls();
-  const labels = { offen:'🟢 Geöffnet', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
-  showToast('Umfrage ' + (labels[status]||status));
-}
-
-async function deletePollById(btn) {
-  if (!confirm('Umfrage löschen?')) return;
-  const pollId = btn.getAttribute('data-id');
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/polls?id=eq.' + pollId, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  await loadPolls();
-  showToast('🗑️ Umfrage gelöscht');
-}
-
 async function castVote(pollId, optionIndex) {
-  if (!canWrite()) { showToast('⏳ Nur Mitglieder können abstimmen'); return; }
-  const poll = (await sb.from('polls').select('status').eq('id', pollId).single()).data;
-  if (poll?.status === 'geschlossen') { showToast('🔒 Abstimmung ist geschlossen'); return; }
+  // Remove old vote
   await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUser.id);
-  const { data: { session } } = await sb.auth.getSession();
+  // Insert new
+  const { data: { session: vs } } = await sb.auth.getSession();
   await fetch(SUPABASE_URL + '/rest/v1/poll_votes', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + vs.access_token, 'Prefer': 'return=minimal' },
     body: JSON.stringify({ poll_id: pollId, user_id: currentUser.id, option_index: optionIndex })
   });
   await loadPolls();
   showToast('✅ Stimme abgegeben!');
 }
 
+async function createPoll() {
+  const q  = document.getElementById('pollQ').value.trim();
+  const o1 = document.getElementById('pollO1').value.trim();
+  const o2 = document.getElementById('pollO2').value.trim();
+  const o3 = document.getElementById('pollO3').value.trim();
+
+  if (!q || !o1 || !o2) { showToast('❗ Frage und mind. 2 Optionen nötig'); return; }
+
+  const options = [o1, o2];
+  if (o3) options.push(o3);
+
+  const { data: { session: ps } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + '/rest/v1/polls', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ps.access_token, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ question: q, options: options, created_by: currentUser.id })
+  });
+  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
+
+  closeModal('modalNewPoll');
+  ['pollQ','pollO1','pollO2','pollO3'].forEach(id => document.getElementById(id).value = '');
+  await loadPolls();
+  showToast('🗳️ Abstimmung gestartet!');
+}
+
+// ════════════════════════════════════════════════
+// CHAT
+// ════════════════════════════════════════════════
 async function loadChat() {
-  const { data: msgs } = await sb.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
+  const { data: msgs } = await sb.from('messages')
+    .select('*').order('created_at', { ascending: true }).limit(100);
+
   renderMessages(msgs || []);
 }
 
 function renderMessages(msgs) {
   const el = document.getElementById('chatMessages');
   el.innerHTML = '';
-  msgs.forEach((msg) => {
+
+  msgs.forEach((msg, i) => {
     const isMe = msg.user_id === currentUser.id;
     const p    = allProfiles[msg.user_id];
     const time = new Date(msg.created_at).toLocaleTimeString('de', { hour:'2-digit', minute:'2-digit' });
+
     const row = document.createElement('div');
-    row.className = 'msg-row ' + (isMe ? 'me' : '');
-    if (!isMe) { const av = avatarEl(p, 30); row.appendChild(av); }
+    row.className = `msg-row ${isMe ? 'me' : ''}`;
+
+    if (!isMe) {
+      const av = avatarEl(p, 30);
+      row.appendChild(av);
+    }
+
     const wrap = document.createElement('div');
-    wrap.innerHTML = (!isMe ? '<div style="font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px">' + (p?.display_name || p?.email?.split('@')[0] || '?') + '</div>' : '') +
-      '<div class="bubble ' + (isMe?'me':'them') + '">' + msg.text + '</div>' +
-      '<div class="msg-meta" style="text-align:' + (isMe?'right':'left') + ';padding:0 4px">' + time + '</div>';
+    wrap.innerHTML = `
+      ${!isMe ? `<div style="font-size:11px;color:var(--muted);padding-left:4px;margin-bottom:3px">${p?.display_name || p?.email?.split('@')[0] || '?'}</div>` : ''}
+      <div class="bubble ${isMe?'me':'them'}">${msg.text}</div>
+      <div class="msg-meta" style="text-align:${isMe?'right':'left'};padding:0 4px">${time}</div>`;
     row.appendChild(wrap);
     el.appendChild(row);
   });
+
   el.scrollTop = el.scrollHeight;
 }
 
@@ -2264,129 +1891,31 @@ async function sendMessage() {
   const text  = input.value.trim();
   if (!text) return;
   input.value = '';
+
   const { data: { session: ms } } = await sb.auth.getSession();
-  const res = await fetch(SUPABASE_URL + '/rest/v1/messages', {
+  await fetch(SUPABASE_URL + '/rest/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ms.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ user_id: currentUser.id, text })
+    body: JSON.stringify({ user_id: currentUser.id, text: text })
   });
-  await sendPush('chat', { sender: currentProfile?.display_name || 'Jemand', text });
 }
 
 // ════════════════════════════════════════════════
 // REALTIME
 // ════════════════════════════════════════════════
 function subscribeRealtime() {
-  sb.channel('pegelclub-realtime')
+  realtimeSub = sb.channel('pegelclub-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, async () => {
       if (document.getElementById('chatView').style.display !== 'none') await loadChat();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, async () => {
-      await loadExpenses(); await loadEvents();
+      await loadExpenses();
+      await loadEvents();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, async () => {
       await loadPolls();
     })
     .subscribe();
-}
-
-// ════════════════════════════════════════════════
-// ADMIN PANEL
-// ════════════════════════════════════════════════
-async function loadAdminPanel() {
-  if (!isAdmin()) return;
-  const { data: pending } = await sb.from('profiles').select('*').eq('role', 'anwaerter');
-  const pendingList = document.getElementById('pendingList');
-  pendingList.innerHTML = '';
-  if (!pending || !pending.length) {
-    pendingList.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Keine Anwärter ✅</div>';
-  } else {
-    pending.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'pending-card';
-      const av = avatarEl(p, 42);
-      card.appendChild(av);
-      const info = document.createElement('div');
-      info.style.flex = '1';
-      info.innerHTML = '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email) + '</div><div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
-      card.appendChild(info);
-      const btn = document.createElement('button');
-      btn.className = 'btn-sm';
-      btn.style.background = 'var(--green)';
-      btn.textContent = 'Freischalten';
-      btn.onclick = () => changeRole(p.id, 'mitglied');
-      card.appendChild(btn);
-      pendingList.appendChild(card);
-    });
-  }
-  const { data: allP } = await sb.from('profiles').select('*').order('created_at');
-  const adminList = document.getElementById('adminMemberList');
-  adminList.innerHTML = '';
-  (allP || []).forEach(p => {
-    const row = document.createElement('div');
-    row.className = 'member-row';
-    const av = avatarEl(p, 40);
-    row.appendChild(av);
-    const info = document.createElement('div');
-    info.style.flex = '1';
-    info.innerHTML = '<div style="font-weight:700;font-size:14px">' + (p.display_name || p.email) + '</div><div style="font-size:12px;color:var(--muted)">' + p.email + '</div>';
-    row.appendChild(info);
-    if (p.id === currentUser.id) {
-      const badge = document.createElement('span');
-      badge.className = 'role-badge role-admin';
-      badge.textContent = '⭐ Du';
-      row.appendChild(badge);
-    } else {
-      const sel = document.createElement('select');
-      sel.className = 'role-select';
-      sel.innerHTML = '<option value="anwaerter"' + (p.role==='anwaerter'?' selected':'') + '>⏳ Anwärter</option>' +
-        '<option value="mitglied"' + (p.role==='mitglied'?' selected':'') + '>✅ Mitglied</option>' +
-        '<option value="admin"' + (p.role==='admin'?' selected':'') + '>⭐ Admin</option>';
-      sel.onchange = (e) => changeRole(p.id, e.target.value);
-      row.appendChild(sel);
-      const delBtn = document.createElement('button');
-      delBtn.style.cssText = 'margin-left:8px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;font-weight:600';
-      delBtn.textContent = '🗑️';
-      delBtn.onclick = () => deleteUser(p.id, p.display_name || p.email);
-      row.appendChild(delBtn);
-    }
-    adminList.appendChild(row);
-  });
-}
-
-async function changeRole(userId, newRole) {
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ role: newRole })
-  });
-  await loadAllProfiles();
-  await loadAdminPanel();
-  const roleLabels = { anwaerter:'Anwärter', mitglied:'Mitglied', admin:'Admin' };
-  showToast('✅ Rolle: ' + roleLabels[newRole]);
-}
-
-async function deleteUser(userId, name) {
-  if (!confirm('Nutzer "' + name + '" wirklich löschen?')) return;
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  await loadAllProfiles();
-  await loadAdminPanel();
-  showToast('🗑️ Nutzer entfernt');
-}
-
-// ════════════════════════════════════════════════
-// PERMISSIONS
-// ════════════════════════════════════════════════
-function canWrite() { return currentProfile?.role === 'mitglied' || currentProfile?.role === 'admin'; }
-function isAdmin()  { return currentProfile?.role === 'admin'; }
-function checkPermission() {
-  if (!canWrite()) { showToast('⏳ Nur Mitglieder können Inhalte erstellen'); return false; }
-  return true;
 }
 
 // ════════════════════════════════════════════════
@@ -2404,8 +1933,10 @@ function switchTab(tab, btn) {
     dot.className = 'nav-dot';
     btn.appendChild(dot);
   }
+
   const mainContent = document.getElementById('mainContent');
   const chatView    = document.getElementById('chatView');
+
   if (tab === 'chat') {
     mainContent.style.display = 'none';
     chatView.style.display    = 'flex';
@@ -2416,73 +1947,141 @@ function switchTab(tab, btn) {
     chatView.style.display    = 'none';
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + tab).classList.add('active');
-    const titles = { events:'Pegelclub 🍻', expenses:'Ausgaben 💳', polls:'Abstimmung 🗳️', members:'Mitglieder 👥', profile:'Mein Profil 👤', admin:'Admin ⚙️' };
+
+    const titles = { events:'Pegelclub 🍻', expenses:'Ausgaben 💳', polls:'Abstimmung 🗳️', members:'Mitglieder 👥', profile:'Mein Profil 👤' };
     document.getElementById('headerTitle').textContent = titles[tab] || 'Pegelclub';
+
     if (tab === 'polls')   loadPolls();
     if (tab === 'members') renderMembers();
-    if (tab === 'profile') { renderProfileView(); checkPushStatus(); }
-    if (tab === 'admin')   loadAdminPanel();
+    if (tab === 'profile') renderProfileView();
     if (tab === 'expenses' && currentEventId) loadExpenses();
     mainContent.scrollTop = 0;
   }
 }
 
 // ════════════════════════════════════════════════
-// PUSH NOTIFICATIONS
+// PAYMENTS
 // ════════════════════════════════════════════════
+async function loadPayments(eventId) {
+  const { data } = await sb.from('payments')
+    .select('*').eq('event_id', eventId);
+  return data || [];
+}
 
-function urlBase64ToUint8Array(base64String) {
-  try {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const out = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
-    return out;
-  } catch(e) {
-    console.error('VAPID key conversion error:', e);
-    throw new Error('Ungültiger VAPID Public Key');
+async function confirmPayment(eventId, debtorId, creditorId, role) {
+  // role: 'debtor' or 'creditor'
+  const payments = await loadPayments(eventId);
+  const existing = payments.find(p => p.debtor_id === debtorId && p.creditor_id === creditorId);
+
+  if (existing) {
+    const update = {};
+    if (role === 'debtor')   update.debtor_confirmed = true;
+    if (role === 'creditor') update.creditor_confirmed = true;
+
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/payments?id=eq.' + existing.id, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(update)
+    });
+    if (!res.ok) { showToast('Fehler beim Speichern'); return; }
+  } else {
+    const body = {
+      event_id: eventId,
+      debtor_id: debtorId,
+      creditor_id: creditorId,
+      debtor_confirmed: role === 'debtor',
+      creditor_confirmed: role === 'creditor'
+    };
+    const { data: { session } } = await sb.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/rest/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) { showToast('Fehler beim Speichern'); return; }
   }
+
+  showToast(role === 'debtor' ? '💸 Zahlung bestätigt!' : '✅ Eingang bestätigt!');
+  await loadExpenses();
+}
+
+// ════════════════════════════════════════════════
+// START
+// ════════════════════════════════════════════════
+init();
+
+// ════════════════════════════════════════════════
+// ONESIGNAL PUSH
+// ════════════════════════════════════════════════
+const ONESIGNAL_APP_ID = '07bb4cc6-9919-432e-9040-4b4d26f0cf0e';
+
+function initOneSignal() {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: ONESIGNAL_APP_ID,
+      notifyButton: { enable: false },
+      welcomeNotification: { disable: true },
+    });
+    console.log('OneSignal ready');
+  });
 }
 
 async function registerPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { showToast('Push nicht unterstützt'); return; }
   try {
-    // iOS CRITICAL: request permission FIRST, directly from user gesture - no async before this!
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') { showToast('Benachrichtigungen deaktiviert'); return; }
-
-    // Now wait for SW
-    const reg = await navigator.serviceWorker.ready;
-    console.log('SW ready for push:', reg.active?.scriptURL);
-
-    // Unsubscribe old subscription first to force fresh one
-    const oldSub = await reg.pushManager.getSubscription();
-    if (oldSub) await oldSub.unsubscribe();
-
-    // Create new subscription
-    const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
-    console.log('Push subscribed:', sub.endpoint.substring(0, 60));
-
-    // Save to Supabase - delete first to avoid unique constraint error
-    const { data: { session } } = await sb.auth.getSession();
-    await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      const permission = await OneSignal.Notifications.requestPermission();
+      if (!permission) { showToast('Benachrichtigungen abgelehnt'); return; }
+      await OneSignal.login(currentUser.id);
+      const playerId = OneSignal.User.PushSubscription.id;
+      if (playerId) {
+        const { data: { session } } = await sb.auth.getSession();
+        await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
+          method: 'DELETE',
+          headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + session.access_token }
+        });
+        await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON, Authorization: 'Bearer ' + session.access_token, Prefer: 'return=minimal' },
+          body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify({ onesignal_id: playerId }), updated_at: new Date().toISOString() })
+        });
+      }
+      showToast('🔔 Benachrichtigungen aktiviert!');
+      checkPushStatus();
     });
-    const res = await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify(sub), updated_at: new Date().toISOString() })
-    });
-    if (!res.ok) { showToast('Speicherfehler: ' + await res.text()); return; }
-    showToast('🔔 Benachrichtigungen aktiviert!');
-    checkPushStatus();
-  } catch(e) {
-    console.error('registerPush error:', e);
-    showToast('Fehler: ' + e.message);
-  }
+  } catch(e) { showToast('Fehler: ' + e.message); }
+}
+
+async function checkPushStatus() {
+  const btn = document.getElementById('pushBtn');
+  if (!btn) return;
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    const subscribed = OneSignal.User.PushSubscription.optedIn;
+    if (subscribed) {
+      btn.textContent = '✅ Benachrichtigungen aktiv';
+      btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+    } else {
+      btn.textContent = '🔔 Benachrichtigungen aktivieren';
+      btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+    }
+  });
+}
+
+async function togglePushNotifications() {
+  await registerPush();
 }
 
 async function sendPush(type, payload) {
@@ -2490,269 +2089,109 @@ async function sendPush(type, payload) {
     const { data: { session } } = await sb.auth.getSession();
     await fetch(SUPABASE_URL + '/functions/v1/send-push', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
       body: JSON.stringify({ type, payload, sender_id: currentUser.id })
     });
-  } catch(e) { console.log('Push send skipped:', e.message); }
-}
-
-async function debugPush() {
-  const lines = [];
-  lines.push('SW in navigator: ' + ('serviceWorker' in navigator));
-  lines.push('PushManager in window: ' + ('PushManager' in window));
-  lines.push('Notification permission: ' + Notification.permission);
-  lines.push('Standalone: ' + (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone));
-  
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    lines.push('SW ready: YES');
-    lines.push('SW scope: ' + reg.scope);
-    lines.push('SW script: ' + (reg.active ? reg.active.scriptURL : 'none'));
-    
-    const sub = await reg.pushManager.getSubscription();
-    lines.push('Existing sub: ' + (sub ? 'YES - ' + sub.endpoint.substring(0, 50) : 'NO'));
-    
-    lines.push('VAPID key length: ' + VAPID_PUBLIC_KEY.length);
-    
-    try {
-      const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      lines.push('Key bytes length: ' + keyBytes.length);
-    } catch(e) {
-      lines.push('Key error: ' + e.message);
-    }
-    
-    try {
-      lines.push('Subscribing...');
-      const newSub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-      lines.push('New sub: YES');
-      lines.push('Endpoint: ' + newSub.endpoint.substring(0, 60));
-      lines.push('Keys: ' + (newSub.toJSON().keys ? 'YES' : 'NO'));
-      showToast('✅ Subscription erstellt!');
-    } catch(e) {
-      lines.push('Subscribe error: ' + e.message);
-    }
-  } catch(e) {
-    lines.push('SW error: ' + e.message);
-  }
-  
-  // Show all lines as toasts and in alert
-  console.log(lines.join('\n'));
-  alert(lines.join('\n'));
+  } catch(e) { console.log('Push skipped:', e.message); }
 }
 
 async function testLocalNotification() {
   if (!('serviceWorker' in navigator)) { showToast('SW nicht verfügbar'); return; }
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    await reg.showNotification('🍻 Pegelclub Test', {
-      body: 'Lokale Notification funktioniert!',
-      icon: '/icon-192.png',
-      tag: 'test-' + Date.now(),
-      renotify: true
-    });
-    showToast('✅ Test-Notification gesendet!');
-  } catch(e) {
-    showToast('Fehler: ' + e.message);
-  }
-}
-
-async function checkPushStatus() {
-  const btn = document.getElementById('pushBtn');
-  if (!btn) return;
-  if (!('Notification' in window)) { btn.textContent = '🔔 Push nicht verfügbar'; btn.disabled = true; return; }
-  if (Notification.permission === 'granted') {
-    btn.textContent = '✅ Benachrichtigungen aktiv';
-    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
-  } else if (Notification.permission === 'denied') {
-    btn.textContent = '🚫 Benachrichtigungen blockiert';
-    btn.disabled = true;
-  } else {
-    btn.textContent = '🔔 Benachrichtigungen aktivieren';
-    btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
-  }
-}
-
-async function togglePushNotifications() {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  if (!isStandalone) {
-    showToast('📱 Bitte App zuerst installieren: Teilen → Zum Home-Bildschirm');
-    return;
-  }
-  if (!('PushManager' in window)) {
-    showToast('⚠️ Push wird von diesem Browser nicht unterstützt');
-    return;
-  }
-  // Always try to register - even if permission already granted
-  await registerPush();
-}
-
-// ════════════════════════════════════════════════
-// POLL - Dynamic options
-// ════════════════════════════════════════════════
-function addPollOption() {
-  const container = document.getElementById('pollOptionsContainer');
-  const count = container.querySelectorAll('.poll-option-row').length + 1;
-  const row = document.createElement('div');
-  row.className = 'poll-option-row';
-  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-  row.innerHTML = '<input class="input" placeholder="Option ' + count + '" style="flex:1" />' +
-    '<button onclick="removePollOption(this)" style="width:38px;height:44px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);font-size:18px;cursor:pointer;flex-shrink:0">×</button>';
-  container.appendChild(row);
-}
-
-function removePollOption(btn) {
-  const container = document.getElementById('pollOptionsContainer');
-  if (container.querySelectorAll('.poll-option-row').length > 2) {
-    btn.parentElement.remove();
-  } else {
-    showToast('Mindestens 2 Optionen nötig');
-  }
-}
-
-// Override createPoll to use dynamic options
-async function createPoll() {
-  if (!checkPermission()) return;
-  const q = document.getElementById('pollQ').value.trim();
-  if (!q) { showToast('Frage eingeben!'); return; }
-  
-  const rows = document.querySelectorAll('#pollOptionsContainer .poll-option-row input');
-  const options = Array.from(rows).map(i => i.value.trim()).filter(v => v.length > 0);
-  
-  if (options.length < 2) { showToast('Mindestens 2 Optionen nötig'); return; }
-  
-  const { data: { session: ps } } = await sb.auth.getSession();
-  const res = await fetch(SUPABASE_URL + '/rest/v1/polls', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + ps.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ question: q, options, created_by: currentUser.id })
+  const reg = await navigator.serviceWorker.ready;
+  await reg.showNotification('🍻 Pegelclub Test', {
+    body: 'Lokale Notification funktioniert!',
+    icon: '/icon-192.png',
+    tag: 'test-' + Date.now(),
+    renotify: true
   });
-  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
-  closeModal('modalNewPoll');
-  document.getElementById('pollQ').value = '';
-  // Reset options to 2
-  const container = document.getElementById('pollOptionsContainer');
-  container.innerHTML = 
-    '<div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" placeholder="Option 1" style="flex:1" /></div>' +
-    '<div class="poll-option-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" placeholder="Option 2" style="flex:1" /></div>';
-  await loadPolls();
-  await sendPush('poll', { sender: currentProfile?.display_name || 'Jemand', question: q });
-  showToast('🗳️ Abstimmung gestartet!');
+  showToast('✅ Test-Notification gesendet!');
+}
+
+async function sendTestPush() {
+  showToast('📣 Sende Test-Push...');
+  await sendPush('chat', { sender: currentProfile?.display_name || 'Test', text: '👋 Test-Push!' });
+  showToast('✅ Push gesendet!');
 }
 
 // ════════════════════════════════════════════════
-// CHAT - Emoji Picker + Photo Upload
+// EMOJI + PHOTO
 // ════════════════════════════════════════════════
 const EMOJIS = ['😀','😂','🥹','😍','🥰','😎','🤩','😜','🤔','😴','😭','😡','🥳','🎉','🔥','❤️','👍','👎','👏','🙌','🤝','💪','🍺','🍻','🥂','🎯','✅','❌','⚡','💡','🗺️','🏖️','🎭','🏔️','🚗','✈️','🎸','⚽','🏆','💰','💳','🛒','📅','📸','🤙','💯','🆙','🔔','📢','🎊','🥇'];
-
 let emojiPickerOpen = false;
 
 function toggleEmojiPicker() {
   const picker = document.getElementById('emojiPicker');
+  if (!picker) return;
   emojiPickerOpen = !emojiPickerOpen;
   picker.style.display = emojiPickerOpen ? 'block' : 'none';
   if (emojiPickerOpen && !document.getElementById('emojiGrid').children.length) {
-    const grid = document.getElementById('emojiGrid');
     EMOJIS.forEach(emoji => {
       const btn = document.createElement('button');
       btn.textContent = emoji;
-      btn.style.cssText = 'font-size:26px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px;line-height:1';
-      btn.onclick = () => {
-        const input = document.getElementById('chatInput');
-        input.value += emoji;
-        input.focus();
-        toggleEmojiPicker();
-      };
-      grid.appendChild(btn);
+      btn.style.cssText = 'font-size:26px;background:none;border:none;cursor:pointer;padding:4px;border-radius:8px';
+      btn.onclick = () => { document.getElementById('chatInput').value += emoji; toggleEmojiPicker(); };
+      document.getElementById('emojiGrid').appendChild(btn);
     });
   }
 }
 
-// Close emoji picker when clicking outside
-document.addEventListener('click', (e) => {
+document.addEventListener('click', e => {
   const picker = document.getElementById('emojiPicker');
-  const emojiBtn = picker?.previousElementSibling?.previousElementSibling;
-  if (picker && emojiPickerOpen && !picker.contains(e.target) && e.target !== emojiBtn) {
-    emojiPickerOpen = false;
-    picker.style.display = 'none';
+  if (picker && emojiPickerOpen && !picker.contains(e.target) && !e.target.closest('.emoji-btn')) {
+    emojiPickerOpen = false; picker.style.display = 'none';
   }
 });
 
 async function sendPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { showToast('Foto max. 5MB'); return; }
-  
-  try {
-    showToast('📸 Foto wird hochgeladen...');
-    const { data: { session } } = await sb.auth.getSession();
-    const fileName = 'chat/' + currentUser.id + '-' + Date.now() + '.' + file.name.split('.').pop();
-    
-    // Upload to Supabase Storage
-    const formData = new FormData();
-    formData.append('', file);
-    const uploadRes = await fetch(SUPABASE_URL + '/storage/v1/object/avatars/' + fileName, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token },
-      body: file
-    });
-    
-    if (!uploadRes.ok) { showToast('Upload fehlgeschlagen'); return; }
-    
-    const photoUrl = SUPABASE_URL + '/storage/v1/object/public/avatars/' + fileName;
-    
-    // Send as message with image tag
-    await fetch(SUPABASE_URL + '/rest/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ user_id: currentUser.id, text: '<img src="' + photoUrl + '" style="max-width:220px;max-height:220px;border-radius:12px;display:block">' })
-    });
-    
-    event.target.value = '';
-    showToast('📸 Foto gesendet!');
-  } catch(e) { showToast('Fehler: ' + e.message); }
+  if (file.size > 5*1024*1024) { showToast('Max. 5MB'); return; }
+  showToast('📸 Wird hochgeladen...');
+  const { data: { session } } = await sb.auth.getSession();
+  const fileName = 'chat/' + currentUser.id + '-' + Date.now() + '.' + file.name.split('.').pop();
+  await fetch(SUPABASE_URL + '/storage/v1/object/avatars/' + fileName, {
+    method: 'POST', headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + session.access_token, 'Content-Type': file.type }, body: file
+  });
+  const url = SUPABASE_URL + '/storage/v1/object/public/avatars/' + fileName;
+  await fetch(SUPABASE_URL + '/rest/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON, Authorization: 'Bearer ' + session.access_token, Prefer: 'return=minimal' },
+    body: JSON.stringify({ user_id: currentUser.id, text: '<img src="' + url + '" style="max-width:220px;border-radius:12px;display:block">' })
+  });
+  event.target.value = '';
+  showToast('📸 Gesendet!');
+}
+
+// ════════════════════════════════════════════════
+// POLL dynamic options
+// ════════════════════════════════════════════════
+function addPollOption() {
+  const c = document.getElementById('pollOptionsContainer');
+  const n = c.querySelectorAll('.poll-option-row').length + 1;
+  const row = document.createElement('div');
+  row.className = 'poll-option-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+  row.innerHTML = '<input class="input" placeholder="Option ' + n + '" style="flex:1"/>' +
+    '<button onclick="removePollOption(this)" style="width:38px;height:44px;border-radius:12px;background:#fef2f2;border:1px solid #fecaca;color:var(--red);font-size:18px;cursor:pointer">×</button>';
+  c.appendChild(row);
+}
+
+function removePollOption(btn) {
+  const c = document.getElementById('pollOptionsContainer');
+  if (c.querySelectorAll('.poll-option-row').length > 2) btn.parentElement.remove();
+  else showToast('Mind. 2 Optionen nötig');
 }
 
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '1.0.3';
-
-function checkForUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.ready.then(reg => {
-    reg.addEventListener('updatefound', () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdateBanner();
-        }
-      });
-    });
-    // Also check manually
-    reg.update();
-  });
-}
-
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'updateBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(91,79,207,0.4)';
-  banner.innerHTML = '<span>🆕 Update verfügbar!</span>' +
-    '<button onclick="applyUpdate()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;font-size:13px;cursor:pointer">Jetzt laden</button>';
-  document.body.prepend(banner);
-}
-
-function applyUpdate() {
-  navigator.serviceWorker.ready.then(reg => {
-    if (reg.waiting) {
-      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    window.location.reload();
-  });
+  const b = document.createElement('div');
+  b.id = 'updateBanner';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px';
+  b.innerHTML = '<span>🆕 Update verfügbar!</span><button onclick="window.location.reload()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;cursor:pointer">Jetzt laden</button>';
+  document.body.prepend(b);
 }
 
 function initServiceWorker() {
@@ -2761,21 +2200,16 @@ function initServiceWorker() {
     .then(reg => {
       console.log('SW registered:', reg.scope);
       reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner();
-          }
+        const w = reg.installing;
+        w.addEventListener('statechange', () => {
+          if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner();
         });
       });
-    })
-    .catch(err => console.error('SW error:', err));
+    }).catch(e => console.error('SW:', e));
 }
 
-
+initOneSignal();
 initServiceWorker();
-init();
-
 </script>
 </body>
 </html>

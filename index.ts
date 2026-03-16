@@ -1,88 +1,85 @@
-// supabase/functions/send-push/index.ts
-// Supabase Edge Function – sendet Web Push Benachrichtigungen
+// PEGELCLUB PUSH - OneSignal Version
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-// Web Push via VAPID
-const webpush = await import('https://esm.sh/web-push@3.6.6')
+  const SUPA_URL     = Deno.env.get('SUPABASE_URL') ?? ''
+  const SUPA_KEY     = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const OS_APP_ID    = Deno.env.get('ONESIGNAL_APP_ID') ?? ''
+  const OS_API_KEY   = Deno.env.get('ONESIGNAL_API_KEY') ?? ''
 
-const VAPID_PUBLIC_KEY  = Deno.env.get('VAPID_PUBLIC_KEY')!
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
-const VAPID_EMAIL       = Deno.env.get('VAPID_EMAIL')!   // z.B. mailto:du@email.de
+  const db = async (path: string) => {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` }
+    })
+    return r.json()
+  }
 
-webpush.default.setVapidDetails(
-  VAPID_EMAIL,
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-)
+  try {
+    const { type, payload, sender_id } = await req.json()
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-)
-
-serve(async (req) => {
-  const { type, payload, sender_id } = await req.json()
-
-  // Bestimme welche Nutzer benachrichtigt werden sollen
-  let targetUserIds: string[] = []
-
-  if (type === 'payment') {
-    // Nur den Empfänger (Gegenseite) benachrichtigen
-    if (payload.target_user_id) {
-      targetUserIds = [payload.target_user_id]
+    // Get target user IDs
+    let targetIds: string[] = []
+    if (type === 'payment' && payload?.target_user_id) {
+      targetIds = [payload.target_user_id]
+    } else {
+      const members = await db(`profiles?role=in.(mitglied,admin)&id=neq.${sender_id}&select=id`)
+      targetIds = Array.isArray(members) ? members.map((m: any) => m.id) : []
     }
-  } else {
-    // Alle anderen Nutzer außer dem Sender
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id')
-      .neq('id', sender_id)
-      .eq('role', 'mitglied')  // Nur Mitglieder + Admins
 
-    const { data: admins } = await supabase
-      .from('profiles')
-      .select('id')
-      .neq('id', sender_id)
-      .eq('role', 'admin')
-
-    const allTargets = [...(profiles || []), ...(admins || [])]
-    targetUserIds = allTargets.map(p => p.id)
-  }
-
-  if (!targetUserIds.length) {
-    return new Response(JSON.stringify({ sent: 0 }), { status: 200 })
-  }
-
-  // Lade Push-Subscriptions der Zielnutzer
-  const { data: subs } = await supabase
-    .from('push_subscriptions')
-    .select('subscription, user_id')
-    .in('user_id', targetUserIds)
-
-  if (!subs || !subs.length) {
-    return new Response(JSON.stringify({ sent: 0 }), { status: 200 })
-  }
-
-  // Sende Push an jeden Nutzer
-  let sent = 0
-  for (const row of subs) {
-    try {
-      const sub = JSON.parse(row.subscription)
-      await webpush.default.sendNotification(sub, JSON.stringify({ type, payload }))
-      sent++
-    } catch(e) {
-      console.error('Push failed for user', row.user_id, e.message)
-      // Wenn Subscription abgelaufen ist → löschen
-      if (e.statusCode === 410) {
-        await supabase.from('push_subscriptions').delete().eq('user_id', row.user_id)
-      }
+    if (!targetIds.length) {
+      return new Response(JSON.stringify({ sent: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-  }
 
-  return new Response(JSON.stringify({ sent }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  })
+    // Build notification title and body
+    const p = payload || {}
+    const messages: Record<string, { title: string, body: string }> = {
+      chat:    { title: '💬 Neue Nachricht',  body: `${p.sender || 'Jemand'}: ${p.text || ''}` },
+      event:   { title: '⚡ Neues Event',      body: `${p.sender || 'Jemand'} hat "${p.name || ''}" erstellt` },
+      expense: { title: '💳 Neue Ausgabe',     body: `${p.sender || 'Jemand'} hat eine Ausgabe eingetragen` },
+      poll:    { title: '🗳️ Neue Abstimmung',  body: `${p.sender || 'Jemand'}: "${p.question || ''}"` },
+      trip:    { title: '🗺️ Neuer Trip',       body: `${p.sender || 'Jemand'} hat einen Trip erstellt` },
+      payment: { title: '💸 Zahlung',          body: p.role === 'debtor' ? `${p.sender || 'Jemand'} hat gezahlt` : `${p.sender || 'Jemand'} hat empfangen` },
+    }
+    const msg = messages[type] || { title: '🍻 Pegelclub', body: 'Neue Aktivität!' }
+
+    // Send via OneSignal REST API
+    // Use external_id (= our Supabase user IDs) to target specific users
+    const osPayload = {
+      app_id: OS_APP_ID,
+      include_aliases: { external_id: targetIds },
+      target_channel: 'push',
+      headings: { en: msg.title, de: msg.title },
+      contents: { en: msg.body, de: msg.body },
+      url: 'https://sidneyfears.github.io',
+    }
+
+    const osRes = await fetch('https://api.onesignal.com/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${OS_API_KEY}`,
+      },
+      body: JSON.stringify(osPayload),
+    })
+
+    const osData = await osRes.json()
+    console.log('OneSignal response:', JSON.stringify(osData))
+
+    return new Response(
+      JSON.stringify({ sent: osData.recipients || 0, id: osData.id, errors: osData.errors }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+
+  } catch (e) {
+    console.error('Error:', (e as Error).message)
+    return new Response(
+      JSON.stringify({ error: (e as Error).message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 })
