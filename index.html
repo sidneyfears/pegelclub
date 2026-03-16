@@ -154,66 +154,115 @@ img { border-radius: 50%; object-fit: cover; }
   padding-top: var(--safe-top);
 }
 
-/* SIDEBAR */
+/* HAMBURGER BUTTON */
+.hamburger {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.2s;
+}
+.hamburger:active { border-color: var(--border2); }
+.hamburger span {
+  display: block; width: 18px; height: 2px;
+  background: var(--text); border-radius: 2px;
+  transition: all 0.25s;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* OVERLAY */
+.sidebar-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.5);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+  backdrop-filter: blur(2px);
+}
+.sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+/* SIDEBAR DRAWER */
 .sidebar {
-  width: var(--sidebar-w);
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 201;
+  width: 280px;
   background: var(--bg2);
   border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; align-items: center;
-  padding: 20px 0 calc(20px + var(--safe-bottom));
-  gap: 4px;
-  flex-shrink: 0;
-  z-index: 10;
+  display: flex; flex-direction: column;
+  padding: calc(var(--safe-top) + 20px) 0 calc(20px + var(--safe-bottom));
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 32px rgba(0,0,0,0.3);
 }
-.sidebar-logo {
-  font-size: 24px; margin-bottom: 16px;
-  width: 44px; height: 44px;
-  display: flex; align-items: center; justify-content: center;
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
 }
-.sidebar-divider {
-  width: 32px; height: 1px; background: var(--border); margin: 8px 0;
-}
-.nav-item {
-  width: 48px; height: 48px;
-  border-radius: 14px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: pointer; border: none; background: none;
-  color: var(--text3); gap: 3px;
-  transition: all 0.2s; position: relative;
-}
-.nav-item:hover { background: var(--surface); color: var(--text2); }
-.nav-item.active { background: var(--accent-bg); color: var(--accent); }
-.nav-item .nav-icon { font-size: 20px; line-height: 1; }
-.nav-item .nav-label { font-size: 9px; font-weight: 500; }
-.nav-item .nav-dot {
-  position: absolute; top: 6px; right: 6px;
-  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+.sidebar-brand {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800; font-size: 22px; color: var(--text);
+  letter-spacing: -0.5px;
 }
 .sidebar-spacer { flex: 1; }
 
-/* Theme toggle */
-.theme-toggle {
-  width: 40px; height: 40px; border-radius: 12px;
-  background: var(--surface); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 18px; transition: all 0.2s;
-  margin-bottom: 8px;
+/* NAV ITEMS */
+.nav-btn {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 20px; cursor: pointer;
+  border: none; background: none; width: 100%;
+  color: var(--text2); font-size: 15px; font-weight: 500;
+  border-radius: 0; transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
 }
-.theme-toggle:hover { border-color: var(--border2); }
+.nav-btn:hover { background: var(--surface); color: var(--text); }
+.nav-btn.active { background: var(--accent-bg); color: var(--accent); }
+.nav-btn.active::before {
+  content: '';
+  position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 3px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+.nav-btn .nav-icon { font-size: 20px; width: 24px; text-align: center; }
+.nav-btn .nav-label { flex: 1; text-align: left; }
+.nav-btn .nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+}
+.sidebar-section-label {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 8px 20px 4px;
+}
+
+/* Theme toggle inside sidebar */
+.theme-toggle {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 20px; cursor: pointer;
+  border: none; background: none; width: 100%;
+  color: var(--text2); font-size: 15px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.theme-toggle:hover { background: var(--surface); color: var(--text); }
+.theme-toggle-icon { font-size: 20px; width: 24px; text-align: center; }
 
 /* MAIN CONTENT */
 .main-wrap {
   flex: 1; display: flex; flex-direction: column;
-  overflow: hidden; min-width: 0;
+  overflow: hidden; min-width: 0; width: 100%;
 }
 
 /* TOP BAR */
 .topbar {
   height: 56px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg2);
+  z-index: 10;
 }
 .topbar-title {
   font-family: 'Bricolage Grotesque', sans-serif;
@@ -589,7 +638,7 @@ img { border-radius: 50%; object-fit: cover; }
    EMOJI PICKER
    ════════════════════════════════════════════ */
 #emojiPicker {
-  display: none; position: fixed; bottom: 80px; left: 88px; right: 16px;
+  display: none; position: fixed; bottom: 80px; left: 16px; right: 16px;
   background: var(--bg2); border: 1px solid var(--border2);
   border-radius: var(--radius); padding: 12px; z-index: 150;
   max-height: 220px; overflow-y: auto;
@@ -600,7 +649,7 @@ img { border-radius: 50%; object-fit: cover; }
    UPDATE BANNER
    ════════════════════════════════════════════ */
 #updateBanner {
-  position: fixed; top: var(--safe-top); left: var(--sidebar-w); right: 0;
+  position: fixed; top: var(--safe-top); left: 0; right: 0;
   z-index: 9999; background: linear-gradient(135deg, var(--accent), #a855f7);
   color: #fff; padding: 12px 16px;
   display: flex; align-items: center; justify-content: space-between;
@@ -668,42 +717,54 @@ select.input option { background: var(--bg2); color: var(--text); }
      ═══════════════════════════════════════ -->
 <div id="app" style="display:none">
 
-  <!-- SIDEBAR -->
-  <nav class="sidebar" id="mainNav">
-    <div class="sidebar-logo">🍻</div>
+  <!-- OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-    <button class="nav-btn active" id="nav-trips" onclick="switchTab('events',this)">
+  <!-- SIDEBAR DRAWER -->
+  <nav class="sidebar" id="mainNav">
+    <div class="sidebar-header">
+      <span style="font-size:28px">🍻</span>
+      <div class="sidebar-brand">Pegelclub</div>
+    </div>
+
+    <div class="sidebar-section-label">Navigation</div>
+
+    <button class="nav-btn active" onclick="switchTab('events',this);closeSidebar()">
       <span class="nav-icon">🗺️</span>
-      <span class="nav-label">Trips</span>
+      <span class="nav-label">Trips & Events</span>
       <div class="nav-dot"></div>
     </button>
-    <button class="nav-btn" id="nav-ausgaben" onclick="switchTab('expenses',this)">
+    <button class="nav-btn" onclick="switchTab('expenses',this);closeSidebar()">
       <span class="nav-icon">💳</span>
       <span class="nav-label">Ausgaben</span>
     </button>
-    <button class="nav-btn" id="nav-polls" onclick="switchTab('polls',this)">
+    <button class="nav-btn" onclick="switchTab('polls',this);closeSidebar()">
       <span class="nav-icon">🗳️</span>
       <span class="nav-label">Abstimmung</span>
     </button>
-    <button class="nav-btn" id="nav-chat" onclick="switchTab('chat',this)">
+    <button class="nav-btn" onclick="switchTab('chat',this);closeSidebar()">
       <span class="nav-icon">💬</span>
       <span class="nav-label">Chat</span>
     </button>
-    <button class="nav-btn" id="nav-members" onclick="switchTab('members',this)">
+    <button class="nav-btn" onclick="switchTab('members',this);closeSidebar()">
       <span class="nav-icon">👥</span>
       <span class="nav-label">Crew</span>
     </button>
-    <button class="nav-btn" id="adminNavBtn" onclick="switchTab('admin',this)" style="display:none">
+    <button class="nav-btn" id="adminNavBtn" onclick="switchTab('admin',this);closeSidebar()" style="display:none">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label">Admin</span>
     </button>
 
     <div class="sidebar-spacer"></div>
 
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Theme wechseln">🌙</button>
-    <button class="nav-btn" id="nav-profile" onclick="switchTab('profile',this)">
+    <div class="sidebar-section-label">Einstellungen</div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span class="theme-toggle-icon" id="themeBtn">🌙</span>
+      <span>Dark / Light Mode</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('profile',this);closeSidebar()">
       <span class="nav-icon">👤</span>
-      <span class="nav-label">Profil</span>
+      <span class="nav-label">Mein Profil</span>
     </button>
   </nav>
 
@@ -711,10 +772,13 @@ select.input option { background: var(--bg2); color: var(--text); }
   <div class="main-wrap">
     <!-- TOP BAR -->
     <div class="topbar">
-      <div class="topbar-title" id="headerTitle">Trips</div>
-      <div class="topbar-actions">
+      <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-title" id="headerTitle" style="flex:1">Trips</div>
+      <div class="topbar-actions" style="display:flex;align-items:center;gap:10px">
         <div class="online-dot"></div>
-        <div class="topbar-avatar" id="headerAvatar" onclick="switchTab('profile', document.getElementById('nav-profile'))">?</div>
+        <div class="topbar-avatar" id="headerAvatar" onclick="switchTab('profile',document.querySelector('.nav-btn:last-child'));closeSidebar()">?</div>
       </div>
     </div>
 
@@ -2865,6 +2929,31 @@ function initServiceWorker() {
 initOneSignal();
 initServiceWorker();
 
+
+// ════════════════════════════════════════════════
+// HAMBURGER MENU
+// ════════════════════════════════════════════════
+function toggleSidebar() {
+  const nav     = document.getElementById('mainNav');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn     = document.getElementById('hamburgerBtn');
+  const isOpen  = nav.classList.contains('open');
+  if (isOpen) {
+    nav.classList.remove('open');
+    overlay.classList.remove('open');
+    btn.classList.remove('open');
+  } else {
+    nav.classList.add('open');
+    overlay.classList.add('open');
+    btn.classList.add('open');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('mainNav').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
 
 // ════════════════════════════════════════════════
 // THEME TOGGLE
