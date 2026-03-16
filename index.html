@@ -592,12 +592,13 @@ if (!Promise.allSettled) {
 
     .bubble {
       max-width: 75%;
-      min-width: 48px;
+      min-width: 60px;
       padding: 10px 14px;
       font-size: 15px;
       line-height: 1.5;
-      word-break: break-word;
-      overflow-wrap: break-word;
+      word-break: normal;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
       hyphens: none;
     }
 
@@ -1072,8 +1073,8 @@ if (!Promise.allSettled) {
     <!-- NAV -->
     <nav class="nav" id="mainNav">
       <button class="nav-btn active" onclick="switchTab('events',this)">
-        <span class="nav-icon">⚡</span>
-        <span class="nav-label">Events</span>
+        <span class="nav-icon">🗺️</span>
+        <span class="nav-label">Trips</span>
         <div class="nav-dot"></div>
       </button>
       <button class="nav-btn" onclick="switchTab('expenses',this)">
@@ -1627,8 +1628,8 @@ async function loadEvents() {
     unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, statusLabel));
   }
 
-  if (!events || !events.length) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Noch keine Events – erstelle das erste! 🎉</div>';
+  if ((!trips || !trips.length) && (!events || !events.length)) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">Noch keine Trips oder Events – fang an! 🍻</div>';
   }
 }
 async function addNewEvent() {
@@ -2348,7 +2349,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
@@ -2366,6 +2367,7 @@ function applyUpdate() {
 
 function checkVersion() {
   const stored = localStorage.getItem('pegelclub_version');
+  // Show banner if version changed or not set yet
   if (stored && stored !== APP_VERSION) {
     showUpdateBanner();
   }
