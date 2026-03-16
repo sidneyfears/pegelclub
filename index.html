@@ -1713,16 +1713,19 @@ function openExpenses(eventId, title) {
 
 let _expensesRenderCount = 0;
 async function loadExpenses() {
-  if (!currentEventId) return;
   const myRender = ++_expensesRenderCount;
-  
-  const { data: expenses } = await sb.from('expenses').select('*')
-    .or(currentEventId
-      ? `event_id.eq.${currentEventId},and(event_id.is.null,trip_id.eq.${currentTripContext || '00000000-0000-0000-0000-000000000000'})`
-      : `event_id.is.null,trip_id.is.null`
-    )
-    .order('created_at', { ascending: false });
+
+  // Load expenses - all if no specific event, else filter by event/trip
+  let query = sb.from('expenses').select('*').order('created_at', { ascending: false });
+  if (currentEventId) {
+    query = query.or(
+      `event_id.eq.${currentEventId}` +
+      (currentTripContext ? `,and(event_id.is.null,trip_id.eq.${currentTripContext})` : '')
+    );
+  }
+  const { data: expenses } = await query;
   const allExp = expenses || [];
+
   const memberCount = Object.keys(allProfiles).length || 1;
   const total = allExp.reduce((s, x) => s + Number(x.amount), 0);
   const perP  = total / memberCount;
@@ -1730,48 +1733,44 @@ async function loadExpenses() {
   document.getElementById('expTotal').textContent     = '€' + total.toFixed(2);
   document.getElementById('expPerPerson').textContent = '€' + perP.toFixed(2);
 
-  // Load payments for split grid
-  const paymentsForGrid = await loadPayments(currentEventId);
+  // Title
+  const titleEl = document.getElementById('expEventTitle');
+  if (titleEl && !currentEventId) titleEl.textContent = '💰 Alle Ausgaben';
 
   // Split grid
   const grid = document.getElementById('splitGrid');
   grid.innerHTML = '';
+  const paymentsForGrid = await loadPayments(currentEventId);
   Object.values(allProfiles).forEach(p => {
     const paid = allExp.filter(e => e.user_id === p.id).reduce((s,x)=>s+Number(x.amount),0);
     const owes = perP - paid;
-    const isSettled = paymentsForGrid.some(pay =>
-      pay.debtor_id === p.id && pay.creditor_confirmed === true
-    );
+    const isSettled = paymentsForGrid.some(pay => pay.debtor_id === p.id && pay.creditor_confirmed === true);
     const cell = document.createElement('div');
     cell.className = 'split-cell';
-    cell.style.cssText = `background:${isSettled?'var(--surface)':owes>0?'#fff7ed':'#f0fdf4'};border:1px solid ${isSettled?'var(--border)':owes>0?'#fed7aa':'#bbf7d0'}`;
+    cell.style.cssText = `background:${isSettled?'var(--surface)':owes>0?'#2a1a0a':'#0a2a1a'};border:1px solid ${isSettled?'var(--border)':owes>0?'#5a3010':'#105a30'}`;
     const av = avatarEl(p, 26);
     cell.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"></div>
       <div style="font-size:11px;color:var(--text2)">Bezahlt</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">€${paid.toFixed(2)}</div>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;color:var(--text)">€${paid.toFixed(2)}</div>
       <div style="margin-top:3px;font-size:12px;font-weight:600;color:${isSettled?'var(--green)':owes>0?'#f59e0b':'#10b981'}">
-        ${isSettled?'✅ Ausgeglichen':Math.abs(owes)<0.01?'✅ Ausgeglichen':owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
+        ${isSettled?'✅ Ausgeglichen':owes>0?'schuldet €'+owes.toFixed(2):'bekommt €'+Math.abs(owes).toFixed(2)}
       </div>`;
     cell.querySelector('div').prepend(av);
     const nameSpan = document.createElement('span');
-    nameSpan.style.cssText = 'font-size:13px;font-weight:600';
+    nameSpan.style.cssText = 'font-size:13px;font-weight:600;color:var(--text)';
     nameSpan.textContent = p.display_name || p.email?.split('@')[0] || '?';
     cell.querySelector('div').appendChild(nameSpan);
     grid.appendChild(cell);
   });
 
-  // Settle
-  // Abort if a newer call has started
   if (myRender !== _expensesRenderCount) return;
 
+  // Settlement section
   const settle = document.getElementById('settleList');
   settle.innerHTML = '';
+  const payments = paymentsForGrid;
 
-  // Load existing payment confirmations
-  const payments = await loadPayments(currentEventId);
-
-  // Minimal transactions algorithm
   const balMap = {};
   Object.values(allProfiles).forEach((p) => {
     const paid = allExp.filter((e) => e.user_id === p.id).reduce((s, x) => s + Number(x.amount), 0);
@@ -1791,9 +1790,7 @@ async function loadExpenses() {
   let di = 0, ci = 0;
   while (di < dArr.length && ci < cArr.length) {
     const amt = Math.min(dArr[di].rem, cArr[ci].rem);
-    if (amt > 0.01) {
-      transactions.push({ from: dArr[di].profile, to: cArr[ci].profile, amount: amt });
-    }
+    if (amt > 0.01) transactions.push({ from: dArr[di].profile, to: cArr[ci].profile, amount: amt });
     dArr[di].rem -= amt;
     cArr[ci].rem -= amt;
     if (dArr[di].rem < 0.01) di++;
@@ -1807,18 +1804,15 @@ async function loadExpenses() {
       const payment = payments.find((p) => p.debtor_id === tx.from.id && p.creditor_id === tx.to.id);
       const isDone = payment?.creditor_confirmed === true;
       const isCreditor = currentUser.id === tx.to.id;
-
       const row = document.createElement('div');
       row.className = 'settle-row';
       if (isDone) row.style.opacity = '0.5';
-
-      // Top: who pays whom
       const topRow = document.createElement('div');
       topRow.style.cssText = 'display:flex;align-items:center;gap:10px';
       topRow.appendChild(avatarEl(tx.from, 32));
       const label = document.createElement('div');
-      label.style.cssText = 'flex:1;font-size:13px';
-      label.innerHTML = '<b>' + (tx.from.display_name || tx.from.email?.split('@')[0] || '?') + '</b> zahlt an <b>' + (tx.to.display_name || tx.to.email?.split('@')[0] || '?') + '</b>';
+      label.style.cssText = 'flex:1;font-size:13px;color:var(--text)';
+      label.innerHTML = '<b>' + (tx.from.display_name||tx.from.email?.split('@')[0]||'?') + '</b> zahlt an <b>' + (tx.to.display_name||tx.to.email?.split('@')[0]||'?') + '</b>';
       topRow.appendChild(label);
       topRow.appendChild(avatarEl(tx.to, 32));
       const amtDiv = document.createElement('div');
@@ -1826,36 +1820,34 @@ async function loadExpenses() {
       amtDiv.textContent = '€' + tx.amount.toFixed(2);
       topRow.appendChild(amtDiv);
       row.appendChild(topRow);
-
-      // Bottom: status
       const statusDiv = document.createElement('div');
       statusDiv.style.cssText = 'margin-top:10px';
-
       if (isDone) {
         statusDiv.innerHTML = '<div class="paid-badge">✅ Abgerechnet</div>';
       } else if (isCreditor) {
-        // Only creditor sees the confirm button
         const btn = document.createElement('button');
-        btn.className = 'confirm-btn mine';
         btn.style.cssText = 'width:100%;padding:10px;border-radius:10px;background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,0.3);font-size:14px;font-weight:600;cursor:pointer';
         btn.textContent = '✅ Geld erhalten – Abrechnen';
         btn.onclick = () => markSettled(currentEventId, tx.from.id, tx.to.id, payment);
         statusDiv.appendChild(btn);
       } else {
-        // Debtor just sees status
-        statusDiv.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:6px">⏳ Warte auf Bestätigung von ' + (tx.to.display_name || tx.to.email?.split('@')[0] || '?') + '</div>';
+        statusDiv.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:6px">⏳ Warte auf Bestätigung von ' + (tx.to.display_name||tx.to.email?.split('@')[0]||'?') + '</div>';
       }
-
       row.appendChild(statusDiv);
       settle.appendChild(row);
     });
   }
 
-  // ── Expense list ──
+  // Expense list
   const list = document.getElementById('expenseList');
   list.innerHTML = '';
   const catIcon  = { food:'🍽️', drinks:'🍺', travel:'✈️', other:'💰' };
   const catColor = { food:'#f472b6', drinks:'#60a5fa', travel:'#34d399', other:'#a78bfa' };
+
+  if (!allExp.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2);font-size:14px">Noch keine Ausgaben</div>';
+    return;
+  }
 
   allExp.forEach((exp, i) => {
     const p = allProfiles[exp.user_id];
@@ -1864,22 +1856,21 @@ async function loadExpenses() {
     div.style.cssText = 'animation:fadeUp 0.2s ease;animation-delay:' + (i*0.04) + 's;animation-fill-mode:both';
     div.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px">
-        <div class="emoji-icon" style="background:${catColor[exp.category]}18;width:42px;height:42px;border-radius:12px">${catIcon[exp.category]||'💰'}</div>
+        <div class="emoji-icon" style="background:${catColor[exp.category]||'#a78bfa'}18;width:42px;height:42px;border-radius:12px">${catIcon[exp.category]||'💰'}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px">${exp.description}</div>
+          <div style="font-weight:600;font-size:14px;color:var(--text)">${exp.description}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:3px" id="exp-meta-${exp.id}">
-            <span class="tag" style="background:${catColor[exp.category]}18;color:${catColor[exp.category]};font-size:11px">${catIcon[exp.category]} ${exp.category}</span>
+            <span class="tag" style="background:${catColor[exp.category]||'#a78bfa'}18;color:${catColor[exp.category]||'#a78bfa'};font-size:11px">${catIcon[exp.category]||'💰'} ${exp.category||'other'}</span>
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:var(--accent)">€${Number(exp.amount).toFixed(2)}</div>
           <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
-            <button onclick="openEditExpense('${exp.id}','${exp.description.replace(/'/g,"\'")}',${exp.amount},'${exp.category}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
+            <button onclick="openEditExpense('${exp.id}','${(exp.description||'').replace(/'/g,"\'")}',${exp.amount},'${exp.category}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
             <button onclick="deleteExpense('${exp.id}')" style="background:var(--red-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--red);cursor:pointer;font-weight:600">🗑️</button>
           </div>
         </div>
       </div>`;
-
     if (p) {
       const meta = div.querySelector('#exp-meta-' + exp.id);
       const av = avatarEl(p, 16);
@@ -1892,6 +1883,7 @@ async function loadExpenses() {
     list.appendChild(div);
   });
 }
+
 
 async function addExpense() {
   const desc   = document.getElementById('expDesc').value.trim();
@@ -2244,7 +2236,7 @@ function switchTab(tab, btn) {
     if (tab === 'admin')   loadAdminPanel();
     if (tab === 'members') renderMembers();
     if (tab === 'profile') renderProfileView();
-    if (tab === 'expenses' && currentEventId) loadExpenses();
+    if (tab === 'expenses') loadExpenses();
     mainContent.scrollTop = 0;
   }
 }
@@ -2489,7 +2481,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
