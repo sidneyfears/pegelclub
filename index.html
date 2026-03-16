@@ -659,6 +659,61 @@ img { border-radius: 50%; object-fit: cover; }
 .poll-option-row input:focus { border-color: var(--accent); }
 .section-divider { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px; }
 select.input option { background: var(--bg2); color: var(--text); }
+
+/* ════════════════════════════════════════════
+   SWIPE ACTIONS
+   ════════════════════════════════════════════ */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+.swipe-wrap.card, .swipe-wrap.card-sm { margin-bottom: 0; border-radius: 0; }
+
+.swipe-bg {
+  position: absolute; inset: 0;
+  display: flex; align-items: center;
+  pointer-events: none;
+  border-radius: var(--radius);
+}
+.swipe-bg-left {
+  background: var(--red-bg);
+  justify-content: flex-end;
+  padding-right: 20px;
+}
+.swipe-bg-right {
+  background: var(--accent-bg);
+  justify-content: flex-start;
+  padding-left: 20px;
+}
+.swipe-bg-right.archive { background: rgba(100,100,120,0.18); }
+.swipe-bg-right.settle  { background: var(--green-bg); }
+
+.swipe-icon {
+  font-size: 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.swipe-icon span {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.swipe-icon.left span  { color: var(--red); }
+.swipe-icon.right span { color: var(--text3); }
+.swipe-icon.right.settle span { color: var(--green); }
+
+.swipe-inner {
+  position: relative; z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: transform 0.08s linear;
+  will-change: transform;
+  touch-action: pan-y;
+}
+.swipe-inner.snapping {
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
 </style>
 </head>
 <body>
@@ -1618,6 +1673,8 @@ async function loadEvents() {
 
     tripCard.appendChild(evContainer);
     list.appendChild(tripCard);
+    // Swipe only on header (expand/collapse area), not the whole collapsible card
+    if (isAdmin()) attachTripSwipe(header, trip.id);
   });
 
   // ── 2. Unassigned Events ──
@@ -1883,7 +1940,7 @@ async function loadExpenses() {
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;color:var(--accent)">€${Number(exp.amount).toFixed(2)}</div>
-          <div style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
+          <div class="expense-btns" style="display:flex;gap:6px;margin-top:4px;justify-content:flex-end">
             <button onclick="openEditExpense('${exp.id}')" style="background:var(--accent-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600">✏️</button>
             <button onclick="deleteExpense('${exp.id}')" style="background:var(--red-bg);border:none;border-radius:8px;padding:4px 8px;font-size:12px;color:var(--red);cursor:pointer;font-weight:600">🗑️</button>
           </div>
@@ -1899,6 +1956,7 @@ async function loadExpenses() {
       av.after(nm);
     }
     list.appendChild(div);
+    attachExpenseSwipe(div, exp.id);
   });
 }
 
@@ -2011,6 +2069,7 @@ async function loadPolls(showArchive = false) {
       if (archiveItems) archiveItems.appendChild(card);
     } else {
       list.appendChild(card);
+      attachPollSwipe(card, poll.id);
     }
   });
 }
@@ -2765,6 +2824,7 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
   card.querySelector('.emoji-icon').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   card.querySelector('[style*="flex:1"]').onclick = () => openExpenses(ev.id, ev.icon + ' ' + ev.name);
   container.appendChild(card);
+  attachEventSwipe(card, ev.id, st);
 }
 
 function buildTripAdminBtns(id, status) {
@@ -3380,6 +3440,402 @@ function initServiceWorker() {
 
 initOneSignal();
 initServiceWorker();
+
+// ════════════════════════════════════════════════
+// SWIPE GESTURE ENGINE
+// ════════════════════════════════════════════════
+const SWIPE_THRESHOLD  = 72;   // px to trigger action
+const SWIPE_PEEK_MAX   = 96;   // max drag distance
+const SWIPE_HAPTIC     = true;
+
+let activeSwipeEl = null; // currently open swipe item
+
+function makeSwipeable(el, { onLeft, onRight, rightLabel = '📦 Archiv', rightClass = 'archive', rightIcon = '📦' } = {}) {
+  // Wrap the element
+  const wrap = document.createElement('div');
+  wrap.className = 'swipe-wrap';
+
+  // Background layers
+  const bgLeft = document.createElement('div');
+  bgLeft.className = 'swipe-bg swipe-bg-left';
+  bgLeft.innerHTML = '<div class="swipe-icon left"><span>🗑️</span><span>Löschen</span></div>';
+
+  const bgRight = document.createElement('div');
+  bgRight.className = 'swipe-bg swipe-bg-right ' + rightClass;
+  bgRight.innerHTML = '<div class="swipe-icon right ' + (rightClass === 'settle' ? 'settle' : '') + '"><span>' + rightIcon + '</span><span>' + rightLabel + '</span></div>';
+
+  // Inner (the actual card)
+  const inner = document.createElement('div');
+  inner.className = 'swipe-inner';
+
+  // Move el into inner
+  el.parentNode.insertBefore(wrap, el);
+  inner.appendChild(el);
+  wrap.appendChild(bgLeft);
+  wrap.appendChild(bgRight);
+  wrap.appendChild(inner);
+
+  // Copy card margin/radius from el to wrap
+  const elStyle = window.getComputedStyle(el);
+  wrap.style.marginBottom = elStyle.marginBottom || '10px';
+  el.style.marginBottom = '0';
+
+  let startX = 0, startY = 0, curX = 0, dragging = false, axis = null;
+  let triggered = false;
+
+  inner.addEventListener('touchstart', e => {
+    // Close any other open swipe
+    if (activeSwipeEl && activeSwipeEl !== inner) snapBack(activeSwipeEl);
+
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    curX   = 0;
+    dragging = true;
+    axis = null;
+    triggered = false;
+    inner.classList.remove('snapping');
+  }, { passive: true });
+
+  inner.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+
+    // Determine scroll vs swipe axis on first move
+    if (!axis) {
+      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (axis === 'y') return;
+
+    e.preventDefault();
+    curX = Math.max(-SWIPE_PEEK_MAX, Math.min(SWIPE_PEEK_MAX, dx));
+    inner.style.transform = 'translateX(' + curX + 'px)';
+
+    // Show correct background
+    bgLeft.style.opacity  = curX < 0 ? '1' : '0';
+    bgRight.style.opacity = curX > 0 ? '1' : '0';
+
+    // Haptic nudge at threshold
+    if (!triggered && Math.abs(curX) >= SWIPE_THRESHOLD) {
+      triggered = true;
+      if (SWIPE_HAPTIC && navigator.vibrate) navigator.vibrate(8);
+    } else if (triggered && Math.abs(curX) < SWIPE_THRESHOLD) {
+      triggered = false;
+    }
+  }, { passive: false });
+
+  inner.addEventListener('touchend', () => {
+    if (!dragging || axis !== 'x') { dragging = false; return; }
+    dragging = false;
+
+    if (curX < -SWIPE_THRESHOLD && onLeft) {
+      // Swipe left → delete: fly out left then execute
+      inner.classList.add('snapping');
+      inner.style.transform = 'translateX(-120%)';
+      wrap.style.overflow = 'hidden';
+      // Collapse height
+      const h = wrap.offsetHeight;
+      wrap.style.height = h + 'px';
+      wrap.style.transition = 'height 0.28s ease, opacity 0.28s ease, margin 0.28s ease';
+      wrap.style.opacity = '1';
+      setTimeout(() => {
+        wrap.style.height = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.opacity = '0';
+      }, 60);
+      setTimeout(() => { onLeft(); wrap.remove(); }, 320);
+    } else if (curX > SWIPE_THRESHOLD && onRight) {
+      inner.classList.add('snapping');
+      inner.style.transform = 'translateX(120%)';
+      wrap.style.overflow = 'hidden';
+      const h = wrap.offsetHeight;
+      wrap.style.height = h + 'px';
+      wrap.style.transition = 'height 0.28s ease, opacity 0.28s ease, margin 0.28s ease';
+      setTimeout(() => {
+        wrap.style.height = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.opacity = '0';
+      }, 60);
+      setTimeout(() => { onRight(); wrap.remove(); }, 320);
+    } else {
+      snapBack(inner);
+    }
+    activeSwipeEl = null;
+  });
+
+  function snapBack(el) {
+    el.classList.add('snapping');
+    el.style.transform = 'translateX(0)';
+    bgLeft.style.opacity  = '0';
+    bgRight.style.opacity = '0';
+    setTimeout(() => el.classList.remove('snapping'), 260);
+  }
+}
+
+// ── Helpers called after rendering ──────────────────
+
+function attachExpenseSwipe(cardEl, expId) {
+  const bgLeft = document.createElement('div');
+  bgLeft.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;background:var(--red-bg);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgLeft.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">🗑️</span><span style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px">Löschen</span></div>';
+
+  const bgRight = document.createElement('div');
+  bgRight.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding-left:20px;background:var(--green-bg);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgRight.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">✏️</span><span style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px">Bearbeiten</span></div>';
+
+  const inner = document.createElement('div');
+  inner.style.cssText = 'position:relative;z-index:1;will-change:transform;touch-action:pan-y';
+  while (cardEl.firstChild) inner.appendChild(cardEl.firstChild);
+
+  cardEl.style.position = 'relative';
+  cardEl.style.overflow = 'hidden';
+  cardEl.appendChild(bgLeft);
+  cardEl.appendChild(bgRight);
+  cardEl.appendChild(inner);
+
+  let startX = 0, startY = 0, curX = 0, dragging = false, axis = null, triggered = false;
+
+  inner.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    curX = 0; dragging = true; axis = null; triggered = false;
+    inner.style.transition = '';
+  }, { passive: true });
+
+  inner.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!axis) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (axis === 'y') return;
+    e.preventDefault();
+    curX = Math.max(-SWIPE_PEEK_MAX, Math.min(SWIPE_PEEK_MAX, dx));
+    inner.style.transform = 'translateX(' + curX + 'px)';
+    bgLeft.style.opacity  = curX < 0 ? '1' : '0';
+    bgRight.style.opacity = curX > 0 ? '1' : '0';
+    if (!triggered && Math.abs(curX) >= SWIPE_THRESHOLD) { triggered = true; if (navigator.vibrate) navigator.vibrate(8); }
+    else if (triggered && Math.abs(curX) < SWIPE_THRESHOLD) triggered = false;
+  }, { passive: false });
+
+  inner.addEventListener('touchend', () => {
+    if (!dragging || axis !== 'x') { dragging = false; return; }
+    dragging = false;
+    if (curX < -SWIPE_THRESHOLD) {
+      inner.style.transition = 'transform 0.22s ease';
+      inner.style.transform = 'translateX(-120%)';
+      setTimeout(() => deleteExpense(expId), 250);
+    } else if (curX > SWIPE_THRESHOLD) {
+      snapBack();
+      openEditExpense(expId);
+    } else { snapBack(); }
+  });
+
+  function snapBack() {
+    inner.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1)';
+    inner.style.transform = 'translateX(0)';
+    bgLeft.style.opacity = bgRight.style.opacity = '0';
+  }
+}
+
+function attachEventSwipe(cardEl, evId) {
+  if (!canWrite()) return;
+
+  const bgLeft = document.createElement('div');
+  bgLeft.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;background:var(--red-bg);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgLeft.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">🗑️</span><span style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px">Löschen</span></div>';
+
+  const bgRight = document.createElement('div');
+  bgRight.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding-left:20px;background:rgba(100,100,120,0.18);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgRight.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">📦</span><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Archiv</span></div>';
+
+  const inner = document.createElement('div');
+  inner.style.cssText = 'position:relative;z-index:1;will-change:transform;touch-action:pan-y';
+  // Move all card children into inner
+  while (cardEl.firstChild) inner.appendChild(cardEl.firstChild);
+
+  cardEl.style.position = 'relative';
+  cardEl.style.overflow = 'hidden';
+  cardEl.appendChild(bgLeft);
+  cardEl.appendChild(bgRight);
+  cardEl.appendChild(inner);
+
+  let startX = 0, startY = 0, curX = 0, dragging = false, axis = null, triggered = false;
+
+  inner.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    curX = 0; dragging = true; axis = null; triggered = false;
+    inner.style.transition = '';
+  }, { passive: true });
+
+  inner.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!axis) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (axis === 'y') return;
+    e.preventDefault();
+    curX = Math.max(-SWIPE_PEEK_MAX, Math.min(SWIPE_PEEK_MAX, dx));
+    inner.style.transform = 'translateX(' + curX + 'px)';
+    bgLeft.style.opacity  = curX < 0 ? '1' : '0';
+    bgRight.style.opacity = curX > 0 ? '1' : '0';
+    if (!triggered && Math.abs(curX) >= SWIPE_THRESHOLD) { triggered = true; if (navigator.vibrate) navigator.vibrate(8); }
+    else if (triggered && Math.abs(curX) < SWIPE_THRESHOLD) triggered = false;
+  }, { passive: false });
+
+  inner.addEventListener('touchend', () => {
+    if (!dragging || axis !== 'x') { dragging = false; return; }
+    dragging = false;
+    if (curX < -SWIPE_THRESHOLD) {
+      inner.style.transition = 'transform 0.22s ease';
+      inner.style.transform = 'translateX(-120%)';
+      setTimeout(() => deleteEventById({ getAttribute: () => evId }), 250);
+    } else if (curX > SWIPE_THRESHOLD) {
+      inner.style.transition = 'transform 0.22s ease';
+      inner.style.transform = 'translateX(120%)';
+      setTimeout(() => setEventStatus({ getAttribute: (a) => a === 'data-id' ? evId : 'archiviert' }), 250);
+    } else { snapBack(); }
+  });
+
+  function snapBack() {
+    inner.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1)';
+    inner.style.transform = 'translateX(0)';
+    bgLeft.style.opacity = bgRight.style.opacity = '0';
+  }
+}
+
+function attachTripSwipe(headerEl, tripId) {
+  if (!isAdmin()) return;
+  // Trip cards have a complex structure (collapsible) – we swipe the header row only.
+  // We inject swipe backgrounds inside the header and move the content into an inner div.
+  const origOnclick = headerEl.onclick;
+  headerEl.onclick = null;
+
+  const bgLeft = document.createElement('div');
+  bgLeft.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;background:var(--red-bg);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgLeft.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">🗑️</span><span style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px">Löschen</span></div>';
+
+  const bgRight = document.createElement('div');
+  bgRight.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding-left:20px;background:rgba(100,100,120,0.18);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgRight.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">📦</span><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Archiv</span></div>';
+
+  // Wrap header content in inner div
+  const inner = document.createElement('div');
+  inner.style.cssText = 'position:relative;z-index:1;display:flex;align-items:center;gap:12px;width:100%;will-change:transform;touch-action:pan-y';
+  while (headerEl.firstChild) inner.appendChild(headerEl.firstChild);
+
+  headerEl.style.position = 'relative';
+  headerEl.style.overflow = 'hidden';
+  headerEl.appendChild(bgLeft);
+  headerEl.appendChild(bgRight);
+  headerEl.appendChild(inner);
+
+  // Tap to toggle (on inner)
+  inner.addEventListener('click', () => origOnclick && origOnclick());
+
+  let startX = 0, startY = 0, curX = 0, dragging = false, axis = null, triggered = false;
+
+  inner.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    curX = 0; dragging = true; axis = null; triggered = false;
+    inner.style.transition = '';
+  }, { passive: true });
+
+  inner.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!axis) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (axis === 'y') return;
+    e.preventDefault();
+    curX = Math.max(-SWIPE_PEEK_MAX, Math.min(SWIPE_PEEK_MAX, dx));
+    inner.style.transform = 'translateX(' + curX + 'px)';
+    bgLeft.style.opacity  = curX < 0 ? '1' : '0';
+    bgRight.style.opacity = curX > 0 ? '1' : '0';
+    if (!triggered && Math.abs(curX) >= SWIPE_THRESHOLD) { triggered = true; if (navigator.vibrate) navigator.vibrate(8); }
+    else if (triggered && Math.abs(curX) < SWIPE_THRESHOLD) triggered = false;
+  }, { passive: false });
+
+  inner.addEventListener('touchend', () => {
+    if (!dragging || axis !== 'x') { dragging = false; return; }
+    dragging = false;
+    if (curX < -SWIPE_THRESHOLD) {
+      if (!confirm('Trip löschen?')) { snapTripBack(); return; }
+      inner.style.transition = 'transform 0.25s ease'; inner.style.transform = 'translateX(-120%)';
+      setTimeout(() => deleteTripById({ getAttribute: () => tripId }), 280);
+    } else if (curX > SWIPE_THRESHOLD) {
+      inner.style.transition = 'transform 0.25s ease'; inner.style.transform = 'translateX(120%)';
+      setTimeout(() => setTripStatus({ getAttribute: (a) => a === 'data-id' ? tripId : 'archiviert' }), 280);
+    } else { snapTripBack(); }
+  });
+
+  function snapTripBack() {
+    inner.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1)';
+    inner.style.transform = 'translateX(0)';
+    bgLeft.style.opacity = bgRight.style.opacity = '0';
+  }
+}
+
+function attachPollSwipe(cardEl, pollId) {
+  if (!isAdmin()) return;
+
+  const bgLeft = document.createElement('div');
+  bgLeft.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;background:var(--red-bg);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgLeft.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">🗑️</span><span style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px">Löschen</span></div>';
+
+  const bgRight = document.createElement('div');
+  bgRight.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding-left:20px;background:rgba(100,100,120,0.18);opacity:0;pointer-events:none;border-radius:inherit;transition:opacity 0.1s';
+  bgRight.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:20px">📦</span><span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Archiv</span></div>';
+
+  const inner = document.createElement('div');
+  inner.style.cssText = 'position:relative;z-index:1;will-change:transform;touch-action:pan-y';
+  while (cardEl.firstChild) inner.appendChild(cardEl.firstChild);
+
+  cardEl.style.position = 'relative';
+  cardEl.style.overflow = 'hidden';
+  cardEl.appendChild(bgLeft);
+  cardEl.appendChild(bgRight);
+  cardEl.appendChild(inner);
+
+  let startX = 0, startY = 0, curX = 0, dragging = false, axis = null, triggered = false;
+
+  inner.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    curX = 0; dragging = true; axis = null; triggered = false;
+    inner.style.transition = '';
+  }, { passive: true });
+
+  inner.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (!axis) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (axis === 'y') return;
+    e.preventDefault();
+    curX = Math.max(-SWIPE_PEEK_MAX, Math.min(SWIPE_PEEK_MAX, dx));
+    inner.style.transform = 'translateX(' + curX + 'px)';
+    bgLeft.style.opacity  = curX < 0 ? '1' : '0';
+    bgRight.style.opacity = curX > 0 ? '1' : '0';
+    if (!triggered && Math.abs(curX) >= SWIPE_THRESHOLD) { triggered = true; if (navigator.vibrate) navigator.vibrate(8); }
+    else if (triggered && Math.abs(curX) < SWIPE_THRESHOLD) triggered = false;
+  }, { passive: false });
+
+  inner.addEventListener('touchend', () => {
+    if (!dragging || axis !== 'x') { dragging = false; return; }
+    dragging = false;
+    if (curX < -SWIPE_THRESHOLD) {
+      deletePollById({ getAttribute: () => pollId });
+    } else if (curX > SWIPE_THRESHOLD) {
+      inner.style.transition = 'transform 0.22s ease';
+      inner.style.transform = 'translateX(120%)';
+      setTimeout(() => setPollStatus({ getAttribute: (a) => a === 'data-id' ? pollId : 'archiviert' }), 250);
+    } else { snapBack(); }
+  });
+
+  function snapBack() {
+    inner.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1)';
+    inner.style.transform = 'translateX(0)';
+    bgLeft.style.opacity = bgRight.style.opacity = '0';
+  }
+}
 
 
 // ════════════════════════════════════════════════
