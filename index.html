@@ -663,7 +663,8 @@ select.input option { background: var(--bg2); color: var(--text); }
   <div style="font-size:48px">🍻</div>
   <div class="logo-text">Pegelclub</div>
   <div class="spinner"></div>
-  <div id="loadError" style="color:#f87171;font-size:13px;margin-top:16px;padding:0 20px;text-align:center;display:none"></div>
+  <div id="loadStatus" style="color:rgba(240,239,254,0.5);font-size:12px;margin-top:12px">Verbinde...</div>
+  <div id="loadError" style="color:#f87171;font-size:13px;margin-top:8px;padding:0 20px;text-align:center;display:none"></div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -1275,12 +1276,25 @@ const COLORS = ['#5b4fcf','#ec4899','#14b8a6','#f59e0b','#ef4444','#3b82f6','#8b
 // INIT
 // ════════════════════════════════════════════════
 async function init() {
-  const { data: { session } } = await sb.auth.getSession();
+  console.log('init() started'); const st=document.getElementById('loadStatus'); if(st)st.textContent='Starte App...';
+  let sessionData;
+  try {
+    sessionData = await sb.auth.getSession();
+    if(st)st.textContent='Prüfe Session...'; console.log('getSession done', !!sessionData?.data?.session);
+  } catch(e) {
+    console.error('getSession failed:', e);
+    showAuth();
+    return;
+  }
+  const session = sessionData?.data?.session;
   if (session) {
     currentUser = session.user;
+    if(st)st.textContent='Lade Profil...'; console.log('loading profile...');
     await loadProfile();
+    if(st)st.textContent='Öffne App...'; console.log('showApp...');
     showApp();
   } else {
+    if(st)st.textContent='Anmeldung...'; console.log('no session, showAuth');
     showAuth();
   }
 
@@ -2267,18 +2281,17 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // START
 // ════════════════════════════════════════════════
 // Script runs at end of body - DOM is already ready
-function safeInit() {
+async function safeInit() {
   if (typeof supabase === 'undefined') {
-    // Supabase not loaded yet, retry
     setTimeout(safeInit, 100);
     return;
   }
   try {
-    init();
+    await init();
   } catch(e) {
     console.error('Init crash:', e);
     const ls = document.getElementById('loadingScreen');
-    if (ls) ls.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center">⚠️ ' + e.message + '<br><small>' + e.stack + '</small></div>';
+    if (ls) ls.innerHTML = '<div style="color:#f87171;padding:20px;text-align:center;font-size:13px">⚠️ ' + e.message + '</div>';
   }
 }
 safeInit();
@@ -2468,7 +2481,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.2.2';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
