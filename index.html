@@ -1530,6 +1530,10 @@ async function loadEvents() {
   const total = (allExp || []).reduce((s, x) => s + Number(x.amount), 0);
   document.getElementById('heroTotal').textContent = '€' + total.toFixed(2);
   document.getElementById('heroSub').textContent = Object.keys(allProfiles).length + ' Mitglieder · ' + (events||[]).length + ' Events';
+  const b1 = document.getElementById('heroBadge1');
+  const b2 = document.getElementById('heroBadge2');
+  if (b1) b1.textContent = Object.keys(allProfiles).length + ' Mitglieder';
+  if (b2) b2.textContent = (events||[]).length + ' Events';
 
   const list = document.getElementById('eventList');
   list.innerHTML = '';
@@ -1537,9 +1541,12 @@ async function loadEvents() {
   const statusCls   = { offen:'status-offen', geschlossen:'status-geschlossen', archiviert:'status-archiviert' };
   const statusLabel = { offen:'🟢 Offen', geschlossen:'🔒 Geschlossen', archiviert:'📦 Archiviert' };
 
-  // ── Render Trips with nested Events ──
+  let hasContent = false;
+
+  // ── 1. Trips (with nested events) ──
   const tripList = (trips || []).filter(t => t.status !== 'archiviert');
   tripList.forEach(trip => {
+    hasContent = true;
     const tripEvents = (events || []).filter(e => e.trip_id === trip.id && e.status !== 'archiviert');
     const tripTotal  = tripEvents.reduce((s, ev) => {
       return s + (allExp || []).filter(e => e.event_id === ev.id).reduce((ss, x) => ss + Number(x.amount), 0);
@@ -1550,51 +1557,46 @@ async function loadEvents() {
     const tripCard = document.createElement('div');
     tripCard.style.cssText = 'margin-bottom:12px;border-radius:18px;overflow:hidden;border:1.5px solid var(--border);background:var(--surface)';
 
-    // Trip header
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:' + (isOpen ? 'var(--accent-bg)' : 'var(--surface)') + ';transition:background 0.2s';
     header.onclick = () => toggleTrip(trip.id, tripCard, tripEvents, allExp, statusCls, statusLabel);
     header.innerHTML =
       '<div style="font-size:28px;flex-shrink:0">' + (trip.icon||'🗺️') + '</div>' +
       '<div style="flex:1;min-width:0">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + trip.name + '</div>' +
+        '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + trip.name + '</div>' +
         '<div style="font-size:12px;color:var(--text2);margin-top:2px;display:flex;gap:8px;align-items:center">' +
           '<span>' + tripEvents.length + ' Events</span>' +
-          (openEvents > 0 ? '<span style="background:#dcfce7;color:#16a34a;border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600">' + openEvents + ' offen</span>' : '') +
+          (openEvents > 0 ? '<span style="background:var(--green-bg);color:var(--green);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600">' + openEvents + ' offen</span>' : '') +
           '<span class="status-badge ' + statusCls[trip.status||'offen'] + '">' + statusLabel[trip.status||'offen'] + '</span>' +
         '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="font-family:Syne,sans-serif;font-weight:800;font-size:15px;color:var(--accent)">€' + tripTotal.toFixed(2) + '</div>' +
+        '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:15px;color:var(--accent)">€' + tripTotal.toFixed(2) + (trip.budget ? '<span style="font-size:11px;color:var(--text3);font-weight:400"> / €' + trip.budget + '</span>' : '') + '</div>' +
         '<div id="chev-' + trip.id + '" style="font-size:18px;transition:transform 0.25s;transform:rotate(' + (isOpen?'180':'0') + 'deg)">▾</div>' +
       '</div>';
 
     tripCard.appendChild(header);
 
-    // Budget progress bar (only visible to admin or budget_visible users)
+    // Budget bar
     if (trip.budget && trip.budget > 0 && (isAdmin() || currentProfile?.budget_visible)) {
       const pct = Math.min(100, (tripTotal / trip.budget * 100)).toFixed(0);
       const over = tripTotal > trip.budget;
       const progWrap = document.createElement('div');
-      progWrap.style.cssText = 'padding:0 16px 12px;';
+      progWrap.style.cssText = 'padding:0 16px 10px';
       progWrap.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px"><span>Budget</span><span style="color:' + (over?'var(--red)':'var(--text2)') + '">' + pct + '%' + (over?' 🔴':'') + '</span></div><div style="height:4px;border-radius:2px;background:var(--surface2)"><div style="width:' + pct + '%;height:100%;border-radius:2px;background:' + (over?'var(--red)':pct>80?'var(--amber)':'var(--green)') + ';transition:width 0.4s"></div></div>';
       tripCard.appendChild(progWrap);
     }
 
-    // Trip events container
     const evContainer = document.createElement('div');
     evContainer.id = 'trip-events-' + trip.id;
     evContainer.style.cssText = 'display:' + (isOpen ? 'block' : 'none') + ';padding:0 10px 10px';
 
     if (tripEvents.length === 0) {
-      evContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Noch keine Events in diesem Trip</div>';
+      evContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">Noch keine Events in diesem Trip</div>';
     } else {
-      tripEvents.forEach(ev => {
-        renderEventCard(ev, allExp, evContainer, statusCls, statusLabel);
-      });
+      tripEvents.forEach(ev => renderEventCard(ev, allExp, evContainer, statusCls, statusLabel));
     }
 
-    // Admin buttons for trip
     if (isAdmin()) {
       const adminDiv = document.createElement('div');
       adminDiv.style.cssText = 'padding:8px 10px 10px;display:flex;flex-wrap:wrap;gap:6px';
@@ -1606,70 +1608,56 @@ async function loadEvents() {
     list.appendChild(tripCard);
   });
 
-  // ── Render unassigned Events ──
+  // ── 2. Unassigned Events ──
   const unassigned = (events || []).filter(e => !e.trip_id && e.status !== 'archiviert');
   if (unassigned.length > 0) {
+    hasContent = true;
     if (tripList.length > 0) {
       const sep = document.createElement('div');
-      sep.style.cssText = 'font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--text2);margin:8px 0 10px;padding:0 4px;letter-spacing:0.3px';
-      sep.textContent = 'Ohne Trip';
+      sep.style.cssText = 'font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:13px;color:var(--text3);margin:8px 0 10px;padding:0 4px;letter-spacing:0.3px';
+      sep.textContent = 'Einzelne Events';
       list.appendChild(sep);
     }
     unassigned.forEach(ev => renderEventCard(ev, allExp, list, statusCls, statusLabel));
   }
 
-  if ((!tripList.length) && (!unassigned.length)) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text3);font-size:14px">Noch keine Trips oder Events 🍻</div>';
-  }
+  // ── 3. Unlinked Expenses (no event_id, no trip_id) ──
+  const unlinkedExp = (allExp || []).filter(e => !e.event_id && !e.trip_id);
+  if (unlinkedExp.length > 0) {
+    hasContent = true;
+    const sep = document.createElement('div');
+    sep.style.cssText = 'font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:13px;color:var(--text3);margin:16px 0 10px;padding:0 4px;letter-spacing:0.3px';
+    sep.textContent = 'Einzelne Ausgaben';
+    list.appendChild(sep);
 
-  // ── Render Archive ──
-  const archiveContainer = document.getElementById('tripsArchiveItems');
-  if (archiveContainer) {
-    archiveContainer.innerHTML = '';
-    const archivedTrips = (trips || []).filter(t => t.status === 'archiviert');
-    const archivedEvents = (events || []).filter(e => !e.trip_id && e.status === 'archiviert');
+    const catIcon  = { food:'🍽️', drinks:'🍺', travel:'✈️', other:'💰' };
+    const catColor = { food:'#f472b6', drinks:'#60a5fa', travel:'#34d399', other:'#a78bfa' };
 
-    if (!archivedTrips.length && !archivedEvents.length) {
-      archiveContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px">Kein Archiv vorhanden</div>';
-    }
-
-    archivedTrips.forEach(trip => {
-      const tripEvts = (events || []).filter(e => e.trip_id === trip.id);
-      const tripTotal = tripEvts.reduce((s, ev) => s + (allExp || []).filter(e => e.event_id === ev.id).reduce((ss, x) => ss + Number(x.amount), 0), 0);
+    unlinkedExp.forEach(exp => {
+      const p = allProfiles[exp.user_id];
       const card = document.createElement('div');
-      card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;opacity:0.75';
+      card.className = 'card';
+      card.style.cssText = 'display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px';
+      card.onclick = () => openExpenses(null, '💰 Alle Ausgaben');
       card.innerHTML =
-        '<div style="display:flex;align-items:center;gap:12px">' +
-          '<div style="font-size:28px">' + (trip.icon||'🗺️') + '</div>' +
-          '<div style="flex:1">' +
-            '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:15px">' + trip.name + '</div>' +
-            '<div style="font-size:12px;color:var(--text3);margin-top:2px">' + tripEvts.length + ' Events</div>' +
-          '</div>' +
-          '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:15px;color:var(--text2)">€' + tripTotal.toFixed(2) + '</div>' +
-          (isAdmin() ? '<button onclick="setTripStatus(this)" data-id="' + trip.id + '" data-status="offen" style="margin-left:8px;background:var(--green-bg);border:1px solid transparent;border-radius:8px;padding:5px 10px;font-size:12px;color:var(--green);cursor:pointer;font-weight:600">↩️</button>' : '') +
-        '</div>';
-      archiveContainer.appendChild(card);
-    });
-
-    archivedEvents.forEach(ev => {
-      const evExp2 = (allExp || []).filter(e => e.event_id === ev.id);
-      const evTotal2 = evExp2.reduce((s, x) => s + Number(x.amount), 0);
-      const card = document.createElement('div');
-      card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;opacity:0.75';
-      card.innerHTML =
-        '<div style="display:flex;align-items:center;gap:12px">' +
-          '<div class="emoji-icon" style="background:var(--surface2);width:44px;height:44px;border-radius:12px">' + (ev.icon||'🎉') + '</div>' +
-          '<div style="flex:1">' +
-            '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:14px">' + ev.name + '</div>' +
-            '<div style="font-size:12px;color:var(--text3);margin-top:2px">' + (ev.date||'') + ' · ' + evExp2.length + ' Ausgaben</div>' +
-          '</div>' +
-          '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:15px;color:var(--text2)">€' + evTotal2.toFixed(2) + '</div>' +
-          (isAdmin() ? '<button onclick="setEventStatus(this)" data-id="' + ev.id + '" data-status="offen" style="margin-left:8px;background:var(--green-bg);border:1px solid transparent;border-radius:8px;padding:5px 10px;font-size:12px;color:var(--green);cursor:pointer;font-weight:600">↩️</button>' : '') +
-        '</div>';
-      archiveContainer.appendChild(card);
+        '<div class="emoji-icon" style="background:' + (catColor[exp.category]||'#a78bfa') + '18;width:42px;height:42px;border-radius:12px">' + (catIcon[exp.category]||'💰') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-weight:600;font-size:14px">' + exp.description + '</div>' +
+          '<div style="font-size:12px;color:var(--text2);margin-top:2px">' + (p?.display_name || p?.email?.split('@')[0] || '?') + ' · ' + (exp.category||'') + '</div>' +
+        '</div>' +
+        '<div style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:15px;color:var(--accent)">€' + Number(exp.amount).toFixed(2) + '</div>';
+      list.appendChild(card);
     });
   }
+
+  if (!hasContent) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text2);font-size:14px">Noch keine Trips oder Events – fang an! 🍻</div>';
+  }
+
+  updateCountdown();
 }
+
+
 async function addNewEvent() {
   const name = document.getElementById('newEventName').value.trim();
   const date = document.getElementById('newEventDate').value;
@@ -1729,7 +1717,10 @@ async function loadExpenses() {
   const myRender = ++_expensesRenderCount;
   
   const { data: expenses } = await sb.from('expenses').select('*')
-    .or(`event_id.eq.${currentEventId},and(event_id.is.null,trip_id.eq.${currentTripContext || '00000000-0000-0000-0000-000000000000'})`)
+    .or(currentEventId
+      ? `event_id.eq.${currentEventId},and(event_id.is.null,trip_id.eq.${currentTripContext || '00000000-0000-0000-0000-000000000000'})`
+      : `event_id.is.null,trip_id.is.null`
+    )
     .order('created_at', { ascending: false });
   const allExp = expenses || [];
   const memberCount = Object.keys(allProfiles).length || 1;
@@ -2498,7 +2489,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.2.9';
+const APP_VERSION = '2.3.0';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
