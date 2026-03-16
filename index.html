@@ -1165,34 +1165,6 @@ select.input option { background: var(--bg2); color: var(--text); }
     <button class="btn-primary" onclick="saveEditEvent()" style="margin-top:6px">Speichern</button>
   </div>
 </div>
-
-<!-- EDIT EXPENSE -->
-<div class="modal-overlay" id="modalEditExpense" onclick="closeModalOutside(event,'modalEditExpense')">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Ausgabe bearbeiten ✏️</div>
-    <input type="hidden" id="editExpenseId" />
-    <div class="form-row">
-      <label class="form-label">Beschreibung</label>
-      <input class="input" id="editExpDesc" placeholder="z.B. Abendessen" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Betrag (€)</label>
-      <input class="input" id="editExpAmount" type="number" step="0.01" placeholder="0.00" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Kategorie</label>
-      <div style="display:flex;gap:8px">
-        <button class="cat-btn active" data-cat="food" onclick="pickCatEdit(this)">🍽️ Essen</button>
-        <button class="cat-btn" data-cat="drinks" onclick="pickCatEdit(this)">🍷 Trinken</button>
-        <button class="cat-btn" data-cat="travel" onclick="pickCatEdit(this)">🚗 Reise</button>
-      </div>
-      <input type="hidden" id="editExpCat" value="food" />
-    </div>
-    <button class="btn-primary" onclick="saveEditExpense()" style="margin-top:6px">Speichern</button>
-  </div>
-</div>
-
 <!-- NEW POLL -->
 <div class="modal-overlay" id="modalNewPoll" onclick="closeModalOutside(event,'modalNewPoll')">
   <div class="modal">
@@ -1216,7 +1188,6 @@ select.input option { background: var(--bg2); color: var(--text); }
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
 
 <!-- ==================== SCRIPT ==================== -->
 <div class="toast" id="toast"></div>
