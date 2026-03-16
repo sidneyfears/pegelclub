@@ -1,5 +1,5 @@
 // Pegelclub Service Worker v4
-const VERSION = '2.1.3';
+const VERSION = '2.2.0';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {

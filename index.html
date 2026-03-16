@@ -12,19 +12,7 @@
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <script>
-if (!globalThis) { window.globalThis = window; }
-if (!Promise.allSettled) {
-  Promise.allSettled = function(promises) {
-    return Promise.all(promises.map(function(p) {
-      return Promise.resolve(p).then(function(v) { return { status: 'fulfilled', value: v }; },
-      function(e) { return { status: 'rejected', reason: e }; });
-    }));
-  };
-}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.26.0/dist/umd/supabase.min.js"></script>
 <style>
 /* ════════════════════════════════════════════
    DESIGN TOKENS
@@ -663,6 +651,9 @@ img { border-radius: 50%; object-fit: cover; }
 .section-divider { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px; }
 select.input option { background: var(--bg2); color: var(--text); }
 </style>
+</head>
+<body>
+
 
 
 <!-- ═══════════════════════════════════════
@@ -1191,9 +1182,11 @@ select.input option { background: var(--bg2); color: var(--text); }
 
 
 <!-- ==================== SCRIPT ==================== -->
+
 <div class="toast" id="toast"></div>
 
 <script>
+
 
 // ════════════════════════════════════════════════
 // ⚙️  SUPABASE CONFIG  ← HIER EINTRAGEN
@@ -1488,36 +1481,6 @@ async function updateDisplayName() {
 // ════════════════════════════════════════════════
 // MEMBERS
 // ════════════════════════════════════════════════
-function renderMembers() {
-  const list = document.getElementById('memberList');
-  list.innerHTML = '';
-  const profiles = Object.values(allProfiles);
-  if (!profiles.length) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Keine Mitglieder gefunden</div>'; return; }
-
-  profiles.forEach(p => {
-    const row = document.createElement('div');
-    row.className = 'member-row';
-    const av = avatarEl(p, 46);
-    row.appendChild(av);
-
-    const info = document.createElement('div');
-    info.style.flex = '1';
-    info.innerHTML = `
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">${p.display_name || p.email}</div>
-      <div style="font-size:12px;color:var(--text2)">${p.email}</div>`;
-    row.appendChild(info);
-
-    if (p.id === currentUser.id) {
-      const badge = document.createElement('span');
-      badge.className = 'tag';
-      badge.style.cssText = 'background:var(--accent-bg);color:var(--accent)';
-      badge.textContent = 'Du';
-      row.appendChild(badge);
-    }
-
-    list.appendChild(row);
-  });
-}
 
 // ════════════════════════════════════════════════
 // EVENTS
@@ -2018,17 +1981,6 @@ async function loadPolls(showArchive = false) {
 }
 
 let tripsArchiveVisible = false;
-function toggleTripsArchive() {
-  tripsArchiveVisible = !tripsArchiveVisible;
-  const archiveList = document.getElementById('tripsArchiveList');
-  const btn = document.getElementById('tripsArchiveBtn');
-  if (archiveList) archiveList.style.display = tripsArchiveVisible ? 'block' : 'none';
-  if (btn) {
-    btn.style.background = tripsArchiveVisible ? 'var(--accent)' : 'var(--accent-bg)';
-    btn.style.color = tripsArchiveVisible ? '#fff' : 'var(--accent)';
-    btn.style.borderColor = tripsArchiveVisible ? 'transparent' : '';
-  }
-}
 
 let pollArchiveVisible = false;
 function togglePollArchive() {
@@ -2064,26 +2016,8 @@ async function deletePollById(btn) {
   showToast('🗑️ Umfrage gelöscht');
 }
 
-function castVoteFromEl(el) {
-  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
-}
 
-function castVoteEl(el) {
-  castVote(el.getAttribute('data-pid'), parseInt(el.getAttribute('data-oi')));
-}
 
-async function castVote(pollId, optionIndex) {
-  if (!canWrite()) { showToast('⏳ Nur Mitglieder können abstimmen'); return; }
-  await sb.from('poll_votes').delete().eq('poll_id', pollId).eq('user_id', currentUser.id);
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/poll_votes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ poll_id: pollId, user_id: currentUser.id, option_index: optionIndex })
-  });
-  await loadPolls();
-  showToast('✅ Stimme abgegeben!');
-}
 
 
 function castVoteFromEl(el) {
@@ -2520,7 +2454,7 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
-const APP_VERSION = '2.1.4';
+const APP_VERSION = '2.2.0';
 
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
@@ -2955,51 +2889,8 @@ function pickExpCat(btn) {
   document.getElementById('editExpCat').value = btn.getAttribute('data-cat');
 }
 
-function openEditExpense(id, desc, amount, cat) {
-  document.getElementById('editExpenseId').value = id;
-  document.getElementById('editExpDesc').value   = desc;
-  document.getElementById('editExpAmount').value = amount;
-  document.getElementById('editExpCat').value    = cat;
-  // Highlight correct category button
-  document.querySelectorAll('#modalEditExpense .cat-btn').forEach(b => {
-    const active = b.getAttribute('data-cat') === cat;
-    b.style.background   = active ? 'var(--accent-bg)' : 'none';
-    b.style.borderColor  = active ? 'var(--accent)'       : 'var(--border)';
-  });
-  openModal('modalEditExpense');
-}
 
-async function saveEditExpense() {
-  const id     = document.getElementById('editExpenseId').value;
-  const desc   = document.getElementById('editExpDesc').value.trim();
-  const amount = parseFloat(document.getElementById('editExpAmount').value);
-  const cat    = document.getElementById('editExpCat').value;
-  if (!desc)          { showToast('Beschreibung fehlt'); return; }
-  if (!amount || amount <= 0) { showToast('Betrag ungültig'); return; }
-  const { data: { session } } = await sb.auth.getSession();
-  const res = await fetch(SUPABASE_URL + '/rest/v1/expenses?id=eq.' + id, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token, 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ description: desc, amount, category: cat })
-  });
-  if (!res.ok) { showToast('Fehler: ' + await res.text()); return; }
-  closeModal('modalEditExpense');
-  await loadExpenses();
-  await loadEvents();
-  showToast('✅ Ausgabe gespeichert!');
-}
 
-async function deleteExpense(id) {
-  if (!confirm('Ausgabe wirklich löschen?')) return;
-  const { data: { session } } = await sb.auth.getSession();
-  await fetch(SUPABASE_URL + '/rest/v1/expenses?id=eq.' + id, {
-    method: 'DELETE',
-    headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
-  });
-  await loadExpenses();
-  await loadEvents();
-  showToast('🗑️ Ausgabe gelöscht');
-}
 
 
 // ════════════════════════════════════════════════
@@ -3487,6 +3378,7 @@ function toggleTheme() {
     }, 100);
   }
 })();
+
 
 </script>
 </body>
