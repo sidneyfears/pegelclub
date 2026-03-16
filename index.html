@@ -660,6 +660,21 @@ img { border-radius: 50%; object-fit: cover; }
 .section-divider { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 10px; }
 select.input option { background: var(--bg2); color: var(--text); }
 
+/* Rotation lock fallback for browsers that ignore manifest orientation */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  body::before {
+    content: '📱 Bitte Gerät drehen';
+    position: fixed; inset: 0; z-index: 99999;
+    background: #0d0d16; color: #f0effe;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 20px; font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  body > * { display: none !important; }
+  body::before { display: flex !important; }
+}
+
 /* ════════════════════════════════════════════
    SWIPE ACTIONS
    ════════════════════════════════════════════ */
@@ -1664,6 +1679,50 @@ async function loadEvents() {
       tripEvents.forEach(ev => renderEventCard(ev, allExp, evContainer, statusCls, statusLabel));
     }
 
+    // ── Payment summary footer ──
+    if (tripEvents.length > 0 && tripTotal > 0) {
+      const memberCount = Object.keys(allProfiles).length || 1;
+      const perPerson   = tripTotal / memberCount;
+
+      // Balances per user
+      const tripExpenses = (allExp || []).filter(e => tripEvents.some(ev => ev.id === e.event_id));
+      const balances = Object.values(allProfiles).map(p => {
+        const paid = tripExpenses.filter(e => e.user_id === p.id).reduce((s,x) => s + Number(x.amount), 0);
+        return { profile: p, paid, owes: perPerson - paid };
+      });
+
+      const debtors   = balances.filter(b => b.owes >  0.01);
+      const allClear  = debtors.length === 0;
+      const totalOpen = debtors.reduce((s, b) => s + b.owes, 0);
+
+      const footer = document.createElement('div');
+      footer.style.cssText = 'margin:4px 0 2px;padding:10px 12px;border-radius:12px;background:' + (allClear ? 'var(--green-bg)' : 'var(--amber-bg)') + ';border:1px solid ' + (allClear ? 'rgba(52,211,153,0.2)' : 'rgba(251,191,36,0.2)');
+
+      if (allClear) {
+        footer.innerHTML =
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            '<span style="font-size:16px">✅</span>' +
+            '<span style="font-size:13px;font-weight:700;color:var(--green)">Alles bezahlt!</span>' +
+          '</div>';
+      } else {
+        const debtorRows = debtors.map(b =>
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">' +
+            '<span style="font-size:12px;color:var(--text2)">' + (b.profile.display_name || b.profile.email?.split('@')[0] || '?') + ' schuldet</span>' +
+            '<span style="font-family:Bricolage Grotesque,sans-serif;font-weight:700;font-size:13px;color:var(--amber)">€' + b.owes.toFixed(2) + '</span>' +
+          '</div>'
+        ).join('');
+        footer.innerHTML =
+          '<div style="display:flex;align-items:center;justify-content:space-between">' +
+            '<div style="display:flex;align-items:center;gap:8px">' +
+              '<span style="font-size:15px">💸</span>' +
+              '<span style="font-size:13px;font-weight:700;color:var(--amber)">Noch offen</span>' +
+            '</div>' +
+            '<span style="font-family:Bricolage Grotesque,sans-serif;font-weight:800;font-size:14px;color:var(--amber)">€' + totalOpen.toFixed(2) + '</span>' +
+          '</div>' + debtorRows;
+      }
+      evContainer.appendChild(footer);
+    }
+
     if (isAdmin()) {
       const adminDiv = document.createElement('div');
       adminDiv.style.cssText = 'padding:8px 10px 10px;display:flex;flex-wrap:wrap;gap:6px';
@@ -2383,6 +2442,13 @@ async function confirmPayment(eventId, debtorId, creditorId, role) {
 // ════════════════════════════════════════════════
 // Script runs at end of body - DOM is already ready
 async function safeInit() {
+  // Lock to portrait
+  try {
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock('portrait').catch(() => {});
+    }
+  } catch(e) {}
+
   const st2 = document.getElementById('loadStatus');
   if (typeof supabase === 'undefined') {
     if(st2) st2.textContent = 'Warte auf Supabase...';
@@ -2891,6 +2957,7 @@ async function deleteTripById(btn) {
     headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
   });
   await loadEvents();
+  if (tripsArchiveVisible) await loadArchivedTripsEvents();
   showToast('🗑️ Trip gelöscht');
 }
 
@@ -2915,6 +2982,7 @@ async function deleteEventById(btn) {
     headers: { 'apikey': SUPABASE_ANON, 'Authorization': 'Bearer ' + session.access_token }
   });
   await loadEvents();
+  if (tripsArchiveVisible) await loadArchivedTripsEvents();
   showToast('🗑️ Event gelöscht');
 }
 
@@ -3921,7 +3989,7 @@ async function loadArchivedTripsEvents() {
           '<span class="status-badge status-archiviert">📦 Archiviert</span>' +
         '</div>' +
       '</div>' +
-      (isAdmin() ? '<div class="admin-actions"><button class="admin-action-btn success" onclick="setTripStatus(this)" data-id="' + trip.id + '" data-status="offen">🟢 Wiederherstellen</button></div>' : '');
+      (isAdmin() ? '<div class="admin-actions"><button class="admin-action-btn success" onclick="setTripStatus(this)" data-id="' + trip.id + '" data-status="offen">🟢 Wiederherstellen</button><button class="admin-action-btn danger" onclick="deleteTripById(this)" data-id="' + trip.id + '">🗑️ Löschen</button></div>' : '');
     container.appendChild(card);
   });
 
@@ -3945,7 +4013,7 @@ async function loadArchivedTripsEvents() {
           '<span class="status-badge status-archiviert">📦 Archiviert</span>' +
         '</div>' +
       '</div>' +
-      (isAdmin() ? '<div class="admin-actions"><button class="admin-action-btn success" onclick="setEventStatus(this)" data-id="' + ev.id + '" data-status="offen">🟢 Wiederherstellen</button></div>' : '');
+      (isAdmin() ? '<div class="admin-actions"><button class="admin-action-btn success" onclick="setEventStatus(this)" data-id="' + ev.id + '" data-status="offen">🟢 Wiederherstellen</button><button class="admin-action-btn danger" onclick="deleteEventById(this)" data-id="' + ev.id + '">🗑️ Löschen</button></div>' : '');
     container.appendChild(card);
   });
 }
