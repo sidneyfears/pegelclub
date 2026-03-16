@@ -741,8 +741,8 @@ select.input option { background: var(--bg2); color: var(--text); }
 <div id="loadingScreen">
   <div style="font-size:48px">🍻</div>
   <div class="logo-text">Pegelclub</div>
-  <div class="spinner"></div>
-  <div id="loadStatus" style="color:rgba(240,239,254,0.6);font-size:13px;margin-top:12px;font-family:sans-serif">Lade...</div>
+  <div style="font-size:36px;animation:spin 1.2s linear infinite;display:inline-block">🍺</div>
+  <div id="loadStatus" style="color:rgba(240,239,254,0.6);font-size:13px;margin-top:12px;font-family:sans-serif">Saufe...</div>
   <div id="loadError" style="color:#f87171;font-size:12px;margin-top:8px;padding:0 20px;text-align:center"></div>
 </div>
 
@@ -2904,6 +2904,18 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
   const travT    = evExp.filter(e => e.category==='travel').reduce((s,x)=>s+Number(x.amount),0);
   const st = ev.status || 'offen';
 
+  // Check if all expenses are fully settled
+  const allPaid = evExp.length > 0 && evExp.every(exp => {
+    const settled = Array.isArray(exp.settled) ? exp.settled
+      : (exp.settled ? JSON.parse(exp.settled) : []);
+    const debtors = Object.values(allProfiles).filter(p => p.id !== exp.user_id);
+    return debtors.every(p => settled.includes(p.id));
+  });
+
+  // Override badge if all paid
+  const displayCls   = allPaid ? 'status-offen' : statusCls[st];
+  const displayLabel = allPaid ? '✅ Bezahlt'   : statusLabel[st];
+
   const card = document.createElement('div');
   card.className = 'card';
   card.style.cssText = 'cursor:pointer;margin-bottom:8px';
@@ -2922,7 +2934,7 @@ function renderEventCard(ev, allExp, container, statusCls, statusLabel) {
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">' +
           '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:14px">' + ev.name + '</span>' +
-          '<span class="status-badge ' + statusCls[st] + '">' + statusLabel[st] + '</span>' +
+          '<span class="status-badge ' + displayCls + '">' + displayLabel + '</span>' +
         '</div>' +
         '<div style="font-size:11px;color:var(--text2)">' + (ev.date||'') + ' · ' + evExp.length + ' Ausgaben</div>' +
       '</div>' +
