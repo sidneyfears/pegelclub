@@ -2040,12 +2040,28 @@ function initOneSignal() {
 
 async function registerPush() {
   try {
+    // iOS CRITICAL: request native permission FIRST directly from user gesture
+    if ('Notification' in window && Notification.permission === 'default') {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { showToast('Benachrichtigungen abgelehnt'); return; }
+    }
+    if ('Notification' in window && Notification.permission === 'denied') {
+      showToast('⚠️ Benachrichtigungen blockiert – bitte in Einstellungen aktivieren');
+      return;
+    }
+
+    // Now initialize OneSignal subscription
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
-      const permission = await OneSignal.Notifications.requestPermission();
-      if (!permission) { showToast('Benachrichtigungen abgelehnt'); return; }
+      // Opt in to push
+      await OneSignal.User.PushSubscription.optIn();
       await OneSignal.login(currentUser.id);
+
+      // Wait briefly for subscription to be ready
+      await new Promise(r => setTimeout(r, 1500));
       const playerId = OneSignal.User.PushSubscription.id;
+      console.log('OneSignal Player ID:', playerId);
+
       if (playerId) {
         const { data: { session } } = await sb.auth.getSession();
         await fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_id=eq.' + currentUser.id, {
@@ -2057,11 +2073,16 @@ async function registerPush() {
           headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON, Authorization: 'Bearer ' + session.access_token, Prefer: 'return=minimal' },
           body: JSON.stringify({ user_id: currentUser.id, subscription: JSON.stringify({ onesignal_id: playerId }), updated_at: new Date().toISOString() })
         });
+        showToast('🔔 Benachrichtigungen aktiviert!');
+      } else {
+        showToast('⚠️ Subscription noch nicht bereit – nochmal tippen');
       }
-      showToast('🔔 Benachrichtigungen aktiviert!');
       checkPushStatus();
     });
-  } catch(e) { showToast('Fehler: ' + e.message); }
+  } catch(e) { 
+    console.error('registerPush error:', e);
+    showToast('Fehler: ' + e.message); 
+  }
 }
 
 async function checkPushStatus() {
