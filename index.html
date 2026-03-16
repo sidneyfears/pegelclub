@@ -2348,13 +2348,28 @@ function removePollOption(btn) {
 // ════════════════════════════════════════════════
 // UPDATE BANNER
 // ════════════════════════════════════════════════
+const APP_VERSION = '1.5.0';
+
 function showUpdateBanner() {
   if (document.getElementById('updateBanner')) return;
   const b = document.createElement('div');
   b.id = 'updateBanner';
-  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px';
-  b.innerHTML = '<span>🆕 Update verfügbar!</span><button onclick="window.location.reload()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;cursor:pointer">Jetzt laden</button>';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;font-family:Syne,sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(91,79,207,0.4)';
+  b.innerHTML = '<span>🆕 Update verfügbar!</span><button onclick="applyUpdate()" style="background:#fff;color:var(--brand);border:none;border-radius:20px;padding:6px 16px;font-weight:700;cursor:pointer">Jetzt laden</button>';
   document.body.prepend(b);
+}
+
+function applyUpdate() {
+  localStorage.setItem('pegelclub_version', APP_VERSION);
+  window.location.reload(true);
+}
+
+function checkVersion() {
+  const stored = localStorage.getItem('pegelclub_version');
+  if (stored && stored !== APP_VERSION) {
+    showUpdateBanner();
+  }
+  localStorage.setItem('pegelclub_version', APP_VERSION);
 }
 
 // ════════════════════════════════════════════════
@@ -2657,14 +2672,20 @@ function checkPermission() {
 }
 
 function initServiceWorker() {
+  // Check for version update
+  checkVersion();
+
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register('/sw.js', { scope: '/' })
     .then(reg => {
       console.log('SW registered:', reg.scope);
+      // Also check SW update
       reg.addEventListener('updatefound', () => {
         const w = reg.installing;
         w.addEventListener('statechange', () => {
-          if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner();
+          if (w.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
         });
       });
     }).catch(e => console.error('SW:', e));
