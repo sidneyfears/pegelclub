@@ -834,6 +834,14 @@ select.input option { background: var(--bg2); color: var(--text); }
       <span class="nav-icon">👥</span>
       <span class="nav-label">Crew</span>
     </button>
+    <button class="nav-btn" onclick="switchTab('kalender',this);closeSidebar()">
+      <span class="nav-icon">📅</span>
+      <span class="nav-label">Kalender</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('countdown',this);closeSidebar()">
+      <span class="nav-icon">⏳</span>
+      <span class="nav-label">Countdown</span>
+    </button>
     <button class="nav-btn" id="adminNavBtn" onclick="switchTab('admin',this);closeSidebar()" style="display:none">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label">Admin</span>
@@ -930,7 +938,7 @@ select.input option { background: var(--bg2); color: var(--text); }
           <div class="section-header" style="margin-top:20px">
             <div class="section-title">Einzelposten</div>
             <div style="display:flex;gap:8px">
-              <button class="btn-sm" style="background:var(--accent);color:#fff;border-color:transparent" onclick="openModal('modalAddExpense')">+ Hinzufügen</button>
+              <button class="btn-sm" style="background:var(--accent);color:#fff;border-color:transparent" onclick="populateExpenseDropdowns();openModal('modalAddExpense')">+ Hinzufügen</button>
             </div>
           </div>
           <div id="expenseList"></div>
@@ -1016,6 +1024,45 @@ select.input option { background: var(--bg2); color: var(--text); }
           <div id="pendingList" style="margin-bottom:20px"></div>
           <div class="section-divider">Alle Mitglieder</div>
           <div id="adminMemberList"></div>
+        </div>
+      </div>
+
+      <!-- KALENDER VIEW -->
+      <div class="view" id="view-kalender">
+        <div class="content-inner">
+          <div class="section-header">
+            <div class="section-title">Kalender 📅</div>
+          </div>
+          <div class="card" style="padding:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <button onclick="calInlinePrev()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer;color:var(--text)">‹</button>
+              <div id="calInlineTitle" style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;color:var(--text)"></div>
+              <button onclick="calInlineNext()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer;color:var(--text)">›</button>
+            </div>
+            <div id="calInlineGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
+            <div style="display:flex;gap:16px;margin-top:14px;font-size:12px;color:var(--text3)">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:4px"></span>Event</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:4px"></span>Trip</span>
+            </div>
+          </div>
+          <div class="section-header">
+            <div class="section-title" id="calInlineMonthLabel">Events dieses Monats</div>
+          </div>
+          <div id="calInlineEventList"></div>
+        </div>
+      </div>
+
+      <!-- COUNTDOWN VIEW -->
+      <div class="view" id="view-countdown">
+        <div class="content-inner">
+          <div class="section-header">
+            <div class="section-title">Nächste Trips ⏳</div>
+          </div>
+          <div id="countdownCards"></div>
+          <div class="section-header" style="margin-top:8px">
+            <div class="section-title">Alle zukünftigen Events</div>
+          </div>
+          <div id="countdownEventList"></div>
         </div>
       </div>
 
@@ -2416,15 +2463,16 @@ function switchTab(tab, btn) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + tab).classList.add('active');
 
-    const titles = { events:'Pegelclub 🍻', expenses:'Ausgaben 💳', polls:'Abstimmung 🗳️', members:'Mitglieder 👥', profile:'Mein Profil 👤' };
+    const titles = { events:'Pegelclub 🍻', expenses:'Ausgaben 💳', polls:'Abstimmung 🗳️', members:'Mitglieder 👥', profile:'Mein Profil 👤', kalender:'Kalender 📅', countdown:'Countdown ⏳', admin:'Admin ⚙️' };
     document.getElementById('headerTitle').textContent = titles[tab] || 'Pegelclub';
 
-    if (tab === 'polls')   loadPolls();
-    if (tab === 'members') renderMembers();
-    if (tab === 'admin')   loadAdminPanel();
-    if (tab === 'members') renderMembers();
-    if (tab === 'profile') renderProfileView();
-    if (tab === 'expenses') loadExpenses();
+    if (tab === 'polls')     loadPolls();
+    if (tab === 'members')   renderMembers();
+    if (tab === 'admin')     loadAdminPanel();
+    if (tab === 'profile')   renderProfileView();
+    if (tab === 'expenses')  loadExpenses();
+    if (tab === 'kalender')  loadInlineCalendar();
+    if (tab === 'countdown') loadCountdownView();
     mainContent.scrollTop = 0;
   }
 }
@@ -3599,6 +3647,172 @@ function initServiceWorker() {
         });
       });
     }).catch(e => console.error('SW:', e));
+}
+
+// ════════════════════════════════════════════════
+// INLINE KALENDER TAB
+// ════════════════════════════════════════════════
+let calInlineYear, calInlineMonth;
+
+async function loadInlineCalendar() {
+  const now = new Date();
+  if (calInlineYear === undefined) { calInlineYear = now.getFullYear(); calInlineMonth = now.getMonth(); }
+  await renderInlineCalendar();
+}
+
+async function renderInlineCalendar() {
+  const { data: events } = await sb.from('events').select('*');
+  const { data: trips  } = await sb.from('trips').select('*');
+  const all = [...(events||[]).map(e=>({...e,_type:'event'})), ...(trips||[]).map(t=>({...t,_type:'trip'}))];
+
+  const firstDay    = new Date(calInlineYear, calInlineMonth, 1).getDay();
+  const daysInMonth = new Date(calInlineYear, calInlineMonth+1, 0).getDate();
+  const monthName   = new Date(calInlineYear, calInlineMonth).toLocaleDateString('de', { month:'long', year:'numeric' });
+
+  document.getElementById('calInlineTitle').textContent = monthName;
+  const labelEl = document.getElementById('calInlineMonthLabel');
+  if (labelEl) labelEl.textContent = 'Events im ' + new Date(calInlineYear, calInlineMonth).toLocaleDateString('de', { month:'long' });
+
+  const grid = document.getElementById('calInlineGrid');
+  grid.innerHTML = '';
+  ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(d => {
+    const h = document.createElement('div');
+    h.style.cssText = 'text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:4px 0';
+    h.textContent = d; grid.appendChild(h);
+  });
+
+  const startDay = (firstDay === 0 ? 6 : firstDay - 1);
+  for (let i = 0; i < startDay; i++) grid.appendChild(document.createElement('div'));
+
+  const today = new Date();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    const dateStr = calInlineYear + '-' + String(calInlineMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const isToday = today.getDate()===d && today.getMonth()===calInlineMonth && today.getFullYear()===calInlineYear;
+    const dayEvents = all.filter(e => {
+      if (!e.date) return false;
+      if (e.date.includes('-')) return e.date.startsWith(dateStr);
+      const p = e.date.split('.');
+      return p.length===3 && (p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')) === dateStr;
+    });
+    cell.style.cssText = 'text-align:center;padding:4px 2px;border-radius:10px;min-height:44px;cursor:' + (dayEvents.length?'pointer':'default') + ';' + (isToday?'background:var(--accent-bg);':'');
+    cell.innerHTML = '<div style="font-size:13px;font-weight:' + (isToday?'700':'400') + ';color:' + (isToday?'var(--accent)':'var(--text)') + '">' + d + '</div>';
+    if (dayEvents.length) {
+      const dots = document.createElement('div');
+      dots.style.cssText = 'display:flex;justify-content:center;gap:2px;margin-top:2px';
+      dayEvents.slice(0,3).forEach(ev => {
+        const dot = document.createElement('div');
+        dot.style.cssText = 'width:5px;height:5px;border-radius:50%;background:' + (ev._type==='trip'?'var(--green)':'var(--accent)');
+        dots.appendChild(dot);
+      });
+      cell.appendChild(dots);
+      cell.onclick = () => {
+        document.querySelectorAll('.cal-event-card').forEach(c => c.style.outline='none');
+        const listEl = document.getElementById('calInlineEventList');
+        dayEvents.forEach(ev => {
+          const card = listEl.querySelector('[data-cal-id="'+ev.id+'"]');
+          if (card) { card.style.outline='2px solid var(--accent)'; card.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+        });
+      };
+    }
+    grid.appendChild(cell);
+  }
+  renderInlineEventList(all, calInlineYear, calInlineMonth);
+}
+
+function renderInlineEventList(all, year, month) {
+  const listEl = document.getElementById('calInlineEventList');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  const parseDate = d => {
+    if (!d) return null;
+    if (d.includes('-')) return new Date(d);
+    const p = d.split('.'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]) : null;
+  };
+  const items = all.filter(e => { const dt=parseDate(e.date); return dt && dt.getFullYear()===year && dt.getMonth()===month; })
+    .sort((a,b) => parseDate(a.date)-parseDate(b.date));
+  if (!items.length) { listEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Keine Events diesen Monat 🗓️</div>'; return; }
+  items.forEach(ev => {
+    const dt = parseDate(ev.date);
+    const dayLabel = dt ? dt.toLocaleDateString('de',{weekday:'short',day:'numeric',month:'short'}) : '';
+    const isTrip = ev._type==='trip';
+    const card = document.createElement('div');
+    card.className = 'card cal-event-card'; card.setAttribute('data-cal-id', ev.id);
+    card.style.cssText = 'display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px;transition:outline 0.2s';
+    card.onclick = () => { if (!isTrip) openExpenses(ev.id, (ev.icon||'🎉')+' '+ev.name); };
+    card.innerHTML = '<div class="emoji-icon" style="background:' + (isTrip?'var(--green-bg)':'var(--accent-bg)') + '">' + (ev.icon||'🎉') + '</div>' +
+      '<div style="flex:1"><div style="font-weight:700;font-size:14px">' + ev.name + '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-top:2px">' + dayLabel + ' · ' + (isTrip?'🗺️ Trip':'🎉 Event') + '</div></div>' +
+      '<div style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:' + (isTrip?'var(--green-bg)':'var(--accent-bg)') + ';color:' + (isTrip?'var(--green)':'var(--accent)') + '">' + (ev.status||'offen') + '</div>';
+    listEl.appendChild(card);
+  });
+}
+
+function calInlinePrev() { calInlineMonth--; if (calInlineMonth<0){calInlineMonth=11;calInlineYear--;} renderInlineCalendar(); }
+function calInlineNext() { calInlineMonth++; if (calInlineMonth>11){calInlineMonth=0;calInlineYear++;} renderInlineCalendar(); }
+
+// ════════════════════════════════════════════════
+// COUNTDOWN VIEW TAB
+// ════════════════════════════════════════════════
+async function loadCountdownView() {
+  const { data: trips  } = await sb.from('trips').select('*').neq('status','archiviert');
+  const { data: events } = await sb.from('events').select('*').neq('status','archiviert');
+  const parseDate = d => {
+    if (!d) return null;
+    if (d.includes('-')) return new Date(d);
+    const p = d.split('.'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]) : null;
+  };
+  const now = new Date(); now.setHours(0,0,0,0);
+
+  const upcomingTrips  = (trips||[]).filter(t=>{ const dt=parseDate(t.date); return dt&&dt>=now; }).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  const upcomingEvents = (events||[]).filter(e=>{ const dt=parseDate(e.date); return dt&&dt>=now; }).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+
+  const cardsEl = document.getElementById('countdownCards');
+  cardsEl.innerHTML = '';
+  if (!upcomingTrips.length) {
+    cardsEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:16px">Keine kommenden Trips 🗺️</div>';
+  } else {
+    upcomingTrips.forEach((trip, idx) => {
+      const dt   = parseDate(trip.date);
+      const days = Math.ceil((dt-now)/86400000);
+      const isNext = idx===0;
+      const card = document.createElement('div');
+      card.style.cssText = 'margin-bottom:12px;border-radius:20px;overflow:hidden;border:' + (isNext?'2px solid var(--accent)':'1px solid var(--border)') + ';background:' + (isNext?'linear-gradient(135deg,rgba(124,106,247,0.15),rgba(168,139,250,0.1))':'var(--surface)');
+      card.innerHTML = '<div style="padding:16px 20px">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+          '<div style="font-size:32px">' + (trip.icon||'🗺️') + '</div>' +
+          '<div style="flex:1"><div style="font-family:\'Bricolage Grotesque\',sans-serif;font-weight:800;font-size:16px">' + trip.name + '</div>' +
+          '<div style="font-size:12px;color:var(--text2);margin-top:2px">' + (trip.date||'') + (isNext?' · <span style="color:var(--accent);font-weight:600">Nächster Trip</span>':'') + '</div></div></div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;background:' + (isNext?'var(--accent-bg)':'var(--surface2)') + ';border-radius:14px;padding:12px 16px">' +
+          '<div style="text-align:center;flex:1"><div style="font-family:\'Bricolage Grotesque\',sans-serif;font-weight:800;font-size:36px;color:' + (isNext?'var(--accent)':'var(--text)') + ';line-height:1">' + days + '</div>' +
+          '<div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">Tag' + (days!==1?'e':'') + '</div></div>' +
+          '<div style="width:1px;height:40px;background:var(--border)"></div>' +
+          '<div style="text-align:center;flex:1"><div style="font-size:13px;font-weight:600">' + dt.toLocaleDateString('de',{weekday:'short',day:'numeric',month:'short'}) + '</div>' +
+          '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + dt.getFullYear() + '</div></div></div></div>';
+      cardsEl.appendChild(card);
+    });
+  }
+
+  const eventListEl = document.getElementById('countdownEventList');
+  eventListEl.innerHTML = '';
+  if (!upcomingEvents.length) {
+    eventListEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)">Keine kommenden Events 🎉</div>';
+    return;
+  }
+  upcomingEvents.forEach(ev => {
+    const dt   = parseDate(ev.date);
+    const days = Math.ceil((dt-now)/86400000);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px';
+    card.onclick = () => openExpenses(ev.id, (ev.icon||'🎉')+' '+ev.name);
+    card.innerHTML = '<div class="emoji-icon" style="background:var(--accent-bg)">' + (ev.icon||'🎉') + '</div>' +
+      '<div style="flex:1"><div style="font-weight:700;font-size:14px">' + ev.name + '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-top:2px">' + (ev.date||'') + '</div></div>' +
+      '<div style="text-align:right;flex-shrink:0"><div style="font-family:\'Bricolage Grotesque\',sans-serif;font-weight:800;font-size:18px;color:var(--accent)">' + days + '</div>' +
+      '<div style="font-size:10px;color:var(--text3);font-weight:600">TAG' + (days!==1?'E':'') + '</div></div>';
+    eventListEl.appendChild(card);
+  });
 }
 
 initOneSignal();
